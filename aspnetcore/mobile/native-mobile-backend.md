@@ -4,7 +4,6 @@ author: rick-anderson
 description: Learn how to create backend services using ASP.NET Core MVC to support native mobile apps.
 ms.author: riande
 ms.date: 2/12/2021
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: mobile/native-mobile-backend
 ---
 # Create backend services for native mobile apps with ASP.NET Core
@@ -13,7 +12,7 @@ By [James Montemagno](https://twitter.com/JamesMontemagno)
 
 Mobile apps can communicate with ASP.NET Core backend services. For instructions on connecting local web services from iOS simulators and Android emulators, see [Connect to Local Web Services from iOS Simulators and Android Emulators](/xamarin/cross-platform/deploy-test/connect-to-local-web-services).
 
-[View or download sample backend services code](https://github.com/xamarin/xamarin-forms-samples/tree/master/WebServices/TodoREST)
+[View or download sample backend services code](https://github.com/xamarin/xamarin-forms-samples/tree/main/WebServices/TodoREST)
 
 ## The Sample Native Mobile App
 
@@ -23,7 +22,7 @@ This tutorial demonstrates how to create backend services using ASP.NET Core to 
 
 ### Features
 
-The [TodoREST app](https://github.com/xamarin/xamarin-forms-samples/tree/master/WebServices/TodoREST) supports listing, adding, deleting, and updating To-Do items. Each item has an ID, a Name, Notes, and a property indicating whether it's been Done yet.
+The [TodoREST app](https://github.com/xamarin/xamarin-forms-samples/tree/main/WebServices/TodoREST) supports listing, adding, deleting, and updating To-Do items. Each item has an ID, a Name, Notes, and a property indicating whether it's been Done yet.
 
 The main view of the items, as shown above, lists each item's name and indicates if it's done with a checkmark.
 
@@ -35,11 +34,11 @@ Tapping an item on the main list screen opens up an edit dialog where the item's
 
 ![Edit item dialog](native-mobile-backend/_static/todo-android-edit-item.png)
 
-To test it out yourself against the ASP.NET Core app created in the next section running on your computer, update the app's [`RestUrl`](https://github.com/xamarin/xamarin-forms-samples/blob/master/WebServices/TodoREST/TodoREST/Constants.cs#L13) constant.
+To test it out yourself against the ASP.NET Core app created in the next section running on your computer, update the app's [`RestUrl`](https://github.com/xamarin/xamarin-forms-samples/blob/main/WebServices/TodoREST/TodoREST/Constants.cs#L13) constant.
 
 Android emulators do not run on the local machine and use a loopback IP (10.0.2.2) to communicate with the local machine. Leverage [Xamarin.Essentials DeviceInfo](/xamarin/essentials/device-information/) to detect what operating the system is running to use the correct URL.
 
-Navigate to the [`TodoREST`](https://github.com/xamarin/xamarin-forms-samples/tree/master/WebServices/TodoREST/TodoREST) project and open the [`Constants.cs`](https://github.com/xamarin/xamarin-forms-samples/blob/master/WebServices/TodoREST/TodoREST/Constants.cs) file. The *Constants.cs* file contains the following configuration.
+Navigate to the [`TodoREST`](https://github.com/xamarin/xamarin-forms-samples/tree/main/WebServices/TodoREST/TodoREST) project and open the [`Constants.cs`](https://github.com/xamarin/xamarin-forms-samples/blob/main/WebServices/TodoREST/TodoREST/Constants.cs) file. The `Constants.cs` file contains the following configuration.
 
 :::code language="csharp" source="~/../xamarin-forms-samples/WebServices/TodoREST/TodoREST/Constants.cs" highlight="13":::
 
@@ -51,7 +50,7 @@ Create a new ASP.NET Core Web Application in Visual Studio. Choose the Web API t
 
 ![New ASP.NET Web Application dialog with Web API project template selected](native-mobile-backend/_static/web-api-template.png)
 
-The app should respond to all requests made to port 5000 including clear-text http traffic for our mobile client. Update *Startup.cs* so <xref:Microsoft.AspNetCore.Builder.HttpsPolicyBuilderExtensions.UseHttpsRedirection%2A> doesn't run in development:
+The app should respond to all requests made to port 5000 including clear-text http traffic for our mobile client. Update `Startup.cs` so <xref:Microsoft.AspNetCore.Builder.HttpsPolicyBuilderExtensions.UseHttpsRedirection%2A> doesn't run in development:
 
 :::code language="csharp" source="~/../xamarin-forms-samples/WebServices/TodoREST/TodoAPI/TodoAPI/Startup.cs" id="snippet" highlight="7-11":::
 
@@ -70,13 +69,13 @@ For this sample, the implementation just uses a private collection of items:
 
 :::code language="csharp" source="~/../xamarin-forms-samples/WebServices/TodoREST/TodoAPI/TodoAPI/Services/TodoRepository.cs":::
 
-Configure the implementation in *Startup.cs*:
+Configure the implementation in `Startup.cs`:
 
 :::code language="csharp" source="~/../xamarin-forms-samples/WebServices/TodoREST/TodoAPI/TodoAPI/Startup.cs" id="snippet2" highlight="3":::
 
 ## Creating the Controller
 
-Add a new controller to the project, [TodoItemsController](https://github.com/xamarin/xamarin-forms-samples/tree/master/WebServices/TodoREST/TodoAPI/TodoAPI/Controllers/TodoItemsController.cs). It should inherit from <xref:Microsoft.AspNetCore.Mvc.ControllerBase>. Add a `Route` attribute to indicate that the controller will handle requests made to paths starting with `api/todoitems`. The `[controller]` token in the route is replaced by the name of the controller (omitting the `Controller` suffix), and is especially helpful for global routes. Learn more about [routing](../fundamentals/routing.md).
+Add a new controller to the project, [TodoItemsController](https://github.com/xamarin/xamarin-forms-samples/tree/main/WebServices/TodoREST/TodoAPI/TodoAPI/Controllers/TodoItemsController.cs). It should inherit from <xref:Microsoft.AspNetCore.Mvc.ControllerBase>. Add a `Route` attribute to indicate that the controller will handle requests made to paths starting with `api/todoitems`. The `[controller]` token in the route is replaced by the name of the controller (omitting the `Controller` suffix), and is especially helpful for global routes. Learn more about [routing](../fundamentals/routing.md).
 
 The controller requires an `ITodoRepository` to function; request an instance of this type through the controller's constructor. At runtime, this instance will be provided using the framework's support for [dependency injection](../fundamentals/dependency-injection.md).
 
@@ -159,5 +158,5 @@ Once you've identified a common policy for your APIs, you can usually encapsulat
 
 - [Xamarin.Forms: Web Service Authentication](/xamarin/xamarin-forms/data-cloud/authentication/)
 - [Xamarin.Forms: Consume a RESTful Web Service](/xamarin/xamarin-forms/data-cloud/web-services/rest)
-- [Microsoft Learn: Consume REST web services in Xamarin Apps](/learn/modules/consume-rest-services/)
-- [Microsoft Learn: Create a web API with ASP.NET Core](/learn/modules/build-web-api-aspnet-core/)
+- [Consume REST web services in Xamarin Apps](/training/modules/consume-rest-services/)
+- [Create a web API with ASP.NET Core](/training/modules/build-web-api-aspnet-core/)

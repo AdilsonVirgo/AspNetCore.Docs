@@ -1,21 +1,20 @@
 ---
 title: Part 3, Razor Pages with EF Core in ASP.NET Core - Sort, Filter, Paging
-author: rick-anderson
+author: tdykstra
 description: Part 3 of Razor Pages and Entity Framework tutorial series.
 ms.author: riande
 ms.custom: mvc
-ms.date: 07/22/2019
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 3/3/2021
 uid: data/ef-rp/sort-filter-page
 ---
 
 # Part 3, Razor Pages with EF Core in ASP.NET Core - Sort, Filter, Paging
 
-By [Tom Dykstra](https://github.com/tdykstra), [Rick Anderson](https://twitter.com/RickAndMSFT), and [Jon P Smith](https://twitter.com/thereformedprog)
+By [Tom Dykstra](https://github.com/tdykstra), [Jeremy Likness](https://twitter.com/jeremylikness), and [Jon P Smith](https://twitter.com/thereformedprog)
 
 [!INCLUDE [about the series](~/includes/RP-EF/intro.md)]
 
-::: moniker range=">= aspnetcore-3.0"
+:::moniker range=">= aspnetcore-3.0"
 
 This tutorial adds sorting, filtering, and paging functionality to the Students pages.
 
@@ -25,7 +24,7 @@ The following illustration shows a completed page. The column headings are click
 
 ## Add sorting
 
-Replace the code in *Pages/Students/Index.cshtml.cs* with the following code to add sorting.
+Replace the code in `Pages/Students/Index.cshtml.cs` with the following code to add sorting.
 
 [!code-csharp[Main](intro/samples/cu30snapshots/3-sorting/Pages/Students/Index1.cshtml.cs?name=snippet_All)]
 
@@ -69,7 +68,7 @@ When an `IQueryable` is created or modified, no query is sent to the database. T
 
 ### Add column heading hyperlinks to the Student Index page
 
-Replace the code in *Students/Index.cshtml*, with the following code. The changes are highlighted.
+Replace the code in `Students/Index.cshtml`, with the following code. The changes are highlighted.
 
 [!code-cshtml[Main](intro/samples/cu30snapshots/3-sorting/Pages/Students/Index1.cshtml?highlight=5,8,17-19,22,25-27,33)]
 
@@ -94,7 +93,7 @@ To add filtering to the Students Index page:
 
 ### Update the OnGetAsync method
 
-Replace the code in *Students/Index.cshtml.cs* with the following code to add filtering:
+Replace the code in `Students/Index.cshtml.cs` with the following code to add filtering:
 
 [!code-csharp[Main](intro/samples/cu30snapshots/3-sorting/Pages/Students/Index2.cshtml.cs?name=snippet_All&highlight=17,22,26-30)]
 
@@ -125,7 +124,7 @@ For more information, see [How to use case-insensitive query with Sqlite provide
 
 ### Update the Razor page
 
-Replace the code in *Pages/Students/Index.cshtml* to add a **Search** button.
+Replace the code in `Pages/Students/Index.cshtml` to add a **Search** button.
 
 [!code-cshtml[Main](intro/samples/cu30snapshots/3-sorting/Pages/Students/Index2.cshtml?highlight=14-23)]
 
@@ -157,17 +156,23 @@ In this section, a `PaginatedList` class is created to support paging. The `Pagi
 
 In the project folder, create `PaginatedList.cs` with the following code:
 
-[!code-csharp[Main](intro/samples/cu30/PaginatedList.cs)]
+[!code-csharp[Main](intro/samples/cu50/PaginatedList.cs)]
 
 The `CreateAsync` method in the preceding code takes page size and page number and applies the appropriate `Skip` and `Take` statements to the `IQueryable`. When `ToListAsync` is called on the `IQueryable`, it returns a List containing only the requested page. The properties `HasPreviousPage` and `HasNextPage` are used to enable or disable **Previous** and **Next** paging buttons.
 
 The `CreateAsync` method is used to create the `PaginatedList<T>`. A constructor can't create the `PaginatedList<T>` object; constructors can't run asynchronous code.
 
-### Add paging to the PageModel class
+### Add page size to configuration
 
-Replace the code in *Students/Index.cshtml.cs* to add paging.
+Add `PageSize` to the `appsettings.json` [Configuration](xref:fundamentals/configuration/index) file:
 
-[!code-csharp[Main](intro/samples/cu30/Pages/Students/Index.cshtml.cs?name=snippet_All&highlight=15-20,23-30,57-59)]
+[!code-json[Main](intro/samples/cu50/appsettings.json?highlight=2)]
+
+### Add paging to IndexModel
+
+Replace the code in `Students/Index.cshtml.cs` to add paging.
+
+[!code-csharp[Main](intro/samples/cu50/Pages/Students/Index.cshtml.cs?name=snippet_All&highlight=5,15-20,28-43,70-72)]
 
 The preceding code:
 
@@ -176,7 +181,7 @@ The preceding code:
 * Saves the sort order in the `CurrentSort` property.
 * Resets page index to 1 when there's a new search string.
 * Uses the `PaginatedList` class to get Student entities.
-* Sets `pageSize` to 3. A real app would use [Configuration](xref:fundamentals/configuration/index) to set the page size value.
+* Sets `pageSize` to 3 from [Configuration](xref:fundamentals/configuration/index), 4 if configuration fails.
 
 All the parameters that `OnGetAsync` receives are null when:
 
@@ -201,19 +206,19 @@ If the search string is changed while paging, the page is reset to 1. The page h
 
   The two question marks after `pageIndex` in the `PaginatedList.CreateAsync` call represent the [null-coalescing operator](/dotnet/csharp/language-reference/operators/null-conditional-operator). The null-coalescing operator defines a default value for a nullable type. The expression `pageIndex ?? 1` returns the value of `pageIndex` if it has a value, otherwise, it returns 1.
 
-### Add paging links to the Razor Page
+### Add paging links
 
-Replace the code in *Students/Index.cshtml* with the following code. The changes are highlighted:
+Replace the code in `Students/Index.cshtml` with the following code. The changes are highlighted:
 
-[!code-cshtml[Main](intro/samples/cu30/Pages/Students/Index.cshtml?highlight=29-32,38-41,69-87)]
+[!code-cshtml[Main](intro/samples/cu50/Pages/Students/Index.cshtml?highlight=29-32,38-41,69-87)]
 
 The column header links use the query string to pass the current search string to the `OnGetAsync` method:
 
-[!code-cshtml[Main](intro/samples/cu30/Pages/Students/Index.cshtml?range=29-32)]
+[!code-cshtml[Main](intro/samples/cu50/Pages/Students/Index.cshtml?range=29-32)]
 
 The paging buttons are displayed by tag helpers:
 
-[!code-cshtml[Main](intro/samples/cu30/Pages/Students/Index.cshtml?range=73-87)]
+[!code-cshtml[Main](intro/samples/cu50/Pages/Students/Index.cshtml?range=73-87)]
 
 Run the app and navigate to the students page.
 
@@ -222,32 +227,32 @@ Run the app and navigate to the students page.
 
 ![students index page with paging links](sort-filter-page/_static/paging30.png)
 
-## Add grouping
+## Grouping
 
-This section creates an About page that displays how many students have enrolled for each enrollment date. The update uses grouping and includes the following steps:
+This section creates an `About` page that displays how many students have enrolled for each enrollment date. The update uses grouping and includes the following steps:
 
-* Create a view model for the data used by the **About** page.
-* Update the About page to use the view model.
+* Create a view model for the data used by the `About` page.
+* Update the `About` page to use the view model.
 
 ### Create the view model
 
 Create a *Models/SchoolViewModels* folder.
 
-Create *SchoolViewModels/EnrollmentDateGroup.cs* with the following code:
+Create `SchoolViewModels/EnrollmentDateGroup.cs` with the following code:
 
-[!code-csharp[Main](intro/samples/cu30/Models/SchoolViewModels/EnrollmentDateGroup.cs)]
+[!code-csharp[Main](intro/samples/cu50/Models/SchoolViewModels/EnrollmentDateGroup.cs)]
 
 ### Create the Razor Page
 
-Create a *Pages/About.cshtml* file with the following code:
+Create a `Pages/About.cshtml` file with the following code:
 
-[!code-cshtml[Main](intro/samples/cu30/Pages/About.cshtml)]
+[!code-cshtml[Main](intro/samples/cu50/Pages/About.cshtml)]
 
 ### Create the page model
 
-Update the *Pages/About.cshtml.cs* file with the following code:
+Update the `Pages/About.cshtml.cs` file with the following code:
 
-[!code-csharp[Main](intro/samples/cu30/Pages/About.cshtml.cs)]
+[!code-csharp[Main](intro/samples/cu50/Pages/About.cshtml.cs)]
 
 The LINQ statement groups the student entities by enrollment date, calculates the number of entities in each group, and stores the results in a collection of `EnrollmentDateGroup` view model objects.
 
@@ -263,9 +268,9 @@ In the next tutorial, the app uses migrations to update the data model.
 > [Previous tutorial](xref:data/ef-rp/crud)
 > [Next tutorial](xref:data/ef-rp/migrations)
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-3.0"
+:::moniker range="< aspnetcore-3.0"
 
 In this tutorial, sorting, filtering, grouping, and paging, functionality is added.
 
@@ -277,11 +282,11 @@ If you run into problems you can't solve, download the [completed app](https://g
 
 ## Add sorting to the Index page
 
-Add strings to the *Students/Index.cshtml.cs* `PageModel` to contain the sorting parameters:
+Add strings to the `Students/Index.cshtml.cs` `PageModel` to contain the sorting parameters:
 
 [!code-csharp[](intro/samples/cu21/Pages/Students/Index.cshtml.cs?name=snippet1&highlight=10-13)]
 
-Update the *Students/Index.cshtml.cs* `OnGetAsync` with the following code:
+Update the `Students/Index.cshtml.cs` `OnGetAsync` with the following code:
 
 [!code-csharp[](intro/samples/cu21/Pages/Students/Index.cshtml.cs?name=snippet_SortOnly)]
 
@@ -325,7 +330,7 @@ The method uses LINQ to Entities to specify the column to sort by. The code init
 
 ### Add column heading hyperlinks to the Student Index page
 
-Replace the code in *Students/Index.cshtml*, with the following highlighted code:
+Replace the code in `Students/Index.cshtml`, with the following highlighted code:
 
 [!code-cshtml[](intro/samples/cu21/Pages/Students/Index2.cshtml?highlight=17-19,25-27)]
 
@@ -342,9 +347,9 @@ To verify that sorting works:
 
 To get a better understanding of the code:
 
-* In *Students/Index.cshtml.cs*, set a breakpoint on `switch (sortOrder)`.
+* In `Students/Index.cshtml.cs`, set a breakpoint on `switch (sortOrder)`.
 * Add a watch for `NameSort` and `DateSort`.
-* In *Students/Index.cshtml*, set a breakpoint on `@Html.DisplayNameFor(model => model.Student[0].LastName)`.
+* In `Students/Index.cshtml`, set a breakpoint on `@Html.DisplayNameFor(model => model.Student[0].LastName)`.
 
 Step through the debugger.
 
@@ -357,7 +362,7 @@ To add filtering to the Students Index page:
 
 ### Add filtering functionality to the Index method
 
-Update the *Students/Index.cshtml.cs* `OnGetAsync` with the following code:
+Update the `Students/Index.cshtml.cs` `OnGetAsync` with the following code:
 
 [!code-csharp[](intro/samples/cu21/Pages/Students/Index.cshtml.cs?name=snippet_SortFilter&highlight=1,5,9-13)]
 
@@ -381,7 +386,7 @@ There's a performance penalty for calling `ToUpper`. The `ToUpper` code adds a f
 
 ### Add a Search Box to the Student Index page
 
-In *Pages/Students/Index.cshtml*, add the following highlighted code to create a **Search** button and assorted chrome.
+In `Pages/Students/Index.cshtml`, add the following highlighted code to create a **Search** button and assorted chrome.
 
 [!code-cshtml[](intro/samples/cu21/Pages/Students/Index3.cshtml?highlight=14-23&range=1-25)]
 
@@ -418,11 +423,11 @@ The `CreateAsync` method is used to create the `PaginatedList<T>`. A constructor
 
 ## Add paging functionality to the Index method
 
-In *Students/Index.cshtml.cs*, update the type of `Student` from `IList<Student>` to `PaginatedList<Student>`:
+In `Students/Index.cshtml.cs`, update the type of `Student` from `IList<Student>` to `PaginatedList<Student>`:
 
 [!code-csharp[](intro/samples/cu21/Pages/Students/Index.cshtml.cs?name=snippet_SortFilterPageType)]
 
-Update the *Students/Index.cshtml.cs* `OnGetAsync` with the following code:
+Update the `Students/Index.cshtml.cs` `OnGetAsync` with the following code:
 
 [!code-csharp[](intro/samples/cu21/Pages/Students/Index.cshtml.cs?name=snippet_SortFilterPage&highlight=1-4,7-14,41-999)]
 
@@ -459,7 +464,7 @@ The two question marks in `PaginatedList.CreateAsync` represent the [null-coales
 
 ## Add paging links to the student Razor Page
 
-Update the markup in *Students/Index.cshtml*. The changes are highlighted:
+Update the markup in `Students/Index.cshtml`. The changes are highlighted:
 
 [!code-cshtml[](intro/samples/cu21/Pages/Students/Index.cshtml?highlight=28-31,37-40,68-999)]
 
@@ -480,15 +485,15 @@ Run the app and navigate to the students page.
 
 To get a better understanding of the code:
 
-* In *Students/Index.cshtml.cs*, set a breakpoint on `switch (sortOrder)`.
+* In `Students/Index.cshtml.cs`, set a breakpoint on `switch (sortOrder)`.
 * Add a watch for `NameSort`, `DateSort`, `CurrentSort`, and `Model.Student.PageIndex`.
-* In *Students/Index.cshtml*, set a breakpoint on `@Html.DisplayNameFor(model => model.Student[0].LastName)`.
+* In `Students/Index.cshtml`, set a breakpoint on `@Html.DisplayNameFor(model => model.Student[0].LastName)`.
 
 Step through the debugger.
 
 ## Update the About page to show student statistics
 
-In this step, *Pages/About.cshtml* is updated to display how many students have enrolled for each enrollment date. The update uses grouping and includes the following steps:
+In this step, `Pages/About.cshtml` is updated to display how many students have enrolled for each enrollment date. The update uses grouping and includes the following steps:
 
 * Create a view model for the data used by the **About** Page.
 * Update the About page to use the view model.
@@ -497,7 +502,7 @@ In this step, *Pages/About.cshtml* is updated to display how many students have 
 
 Create a *SchoolViewModels* folder in the *Models* folder.
 
-In the *SchoolViewModels* folder, add a *EnrollmentDateGroup.cs* with the following code:
+In the *SchoolViewModels* folder, add a `EnrollmentDateGroup.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu21/Models/SchoolViewModels/EnrollmentDateGroup.cs)]
 
@@ -505,7 +510,7 @@ In the *SchoolViewModels* folder, add a *EnrollmentDateGroup.cs* with the follow
 
 The web templates in ASP.NET Core 2.2 do not include the About page. If you are using ASP.NET Core 2.2, create the About Razor Page.
 
-Update the *Pages/About.cshtml.cs* file with the following code:
+Update the `Pages/About.cshtml.cs` file with the following code:
 
 [!code-csharp[](intro/samples/cu21/Pages/About.cshtml.cs)]
 
@@ -513,13 +518,13 @@ The LINQ statement groups the student entities by enrollment date, calculates th
 
 ### Modify the About Razor Page
 
-Replace the code in the *Pages/About.cshtml* file with the following code:
+Replace the code in the `Pages/About.cshtml` file with the following code:
 
 [!code-cshtml[](intro/samples/cu21/Pages/About.cshtml)]
 
 Run the app and navigate to the About page. The count of students for each enrollment date is displayed in a table.
 
-If you run into problems you can't solve, download the [completed app for this stage](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/data/ef-rp/intro/samples/StageSnapShots/cu-part3-sorting).
+If you run into problems you can't solve, download the [completed app for this stage](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/data/ef-rp/intro/samples/cu20snapshots/cu-part3-sorting).
 
 ![About page](sort-filter-page/_static/about.png)
 
@@ -534,5 +539,5 @@ In the next tutorial, the app uses migrations to update the data model.
 > [Previous](xref:data/ef-rp/crud)
 > [Next](xref:data/ef-rp/migrations)
 
-::: moniker-end
+:::moniker-end
 

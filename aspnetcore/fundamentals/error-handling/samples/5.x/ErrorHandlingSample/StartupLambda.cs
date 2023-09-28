@@ -28,7 +28,7 @@ namespace ErrorHandlingSample
             services.AddRazorPages();
         }
 
-        #region snippet
+        // <snippet>
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -41,7 +41,7 @@ namespace ErrorHandlingSample
                 {
                     errorApp.Run(async context =>
                     {
-                        context.Response.StatusCode = 500;
+                        context.Response.StatusCode = (int) HttpStatusCode.InternalServerError;;
                         context.Response.ContentType = "text/html";
 
                         await context.Response.WriteAsync("<html lang=\"en\"><body>\r\n");
@@ -77,6 +77,6 @@ namespace ErrorHandlingSample
                 endpoints.MapRazorPages();
             });
         }
-        #endregion
+        // </snippet>
     }
 }

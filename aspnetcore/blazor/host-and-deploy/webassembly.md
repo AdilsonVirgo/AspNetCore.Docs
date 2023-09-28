@@ -1,25 +1,151 @@
 ---
 title: Host and deploy ASP.NET Core Blazor WebAssembly
 author: guardrex
-description: Learn how to host and deploy a Blazor app using ASP.NET Core, Content Delivery Networks (CDN), file servers, and GitHub Pages.
+description: Learn how to host and deploy Blazor WebAssembly using ASP.NET Core, Content Delivery Networks (CDN), file servers, and GitHub Pages.
 monikerRange: '>= aspnetcore-3.1'
 ms.author: riande
 ms.custom: mvc
-ms.date: 01/12/2021
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 11/08/2022
 uid: blazor/host-and-deploy/webassembly
 ---
 # Host and deploy ASP.NET Core Blazor WebAssembly
+
+[!INCLUDE[](~/includes/not-latest-version.md)]
+
+This article explains how to host and deploy Blazor WebAssembly using ASP.NET Core, Content Delivery Networks (CDN), file servers, and GitHub Pages.
 
 With the [Blazor WebAssembly hosting model](xref:blazor/hosting-models#blazor-webassembly):
 
 * The Blazor app, its dependencies, and the .NET runtime are downloaded to the browser in parallel.
 * The app is executed directly on the browser UI thread.
 
+:::moniker range=">= aspnetcore-8.0"
+
+This article pertains to the deployment scenario where the Blazor app is placed on a static hosting web server or service, .NET isn't used to serve the Blazor app. This strategy is covered in the [Standalone deployment](#standalone-deployment) section, which includes information on hosting a Blazor WebAssembly app as an IIS sub-app.
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-8.0"
+
 The following deployment strategies are supported:
 
 * The Blazor app is served by an ASP.NET Core app. This strategy is covered in the [Hosted deployment with ASP.NET Core](#hosted-deployment-with-aspnet-core) section.
 * The Blazor app is placed on a static hosting web server or service, where .NET isn't used to serve the Blazor app. This strategy is covered in the [Standalone deployment](#standalone-deployment) section, which includes information on hosting a Blazor WebAssembly app as an IIS sub-app.
+* An ASP.NET Core app hosts multiple Blazor WebAssembly apps. For more information, see <xref:blazor/host-and-deploy/multiple-hosted-webassembly>.
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-8.0"
+
+## Webcil packaging format for .NET assemblies
+
+[Webcil](https://github.com/dotnet/runtime/blob/main/docs/design/mono/webcil.md) is a web-friendly packaging format for .NET assemblies designed to enable using Blazor WebAssembly in restrictive network environments. Webcil files use a standard WebAssembly wrapper, where the assemblies are deployed as WebAssembly files that use the standard `.wasm` file extension.
+
+Webcil is the default packaging format when you publish a Blazor WebAssembly app. To disable the use of Webcil, set the following MS Build property in the app's project file:
+
+```xml
+<PropertyGroup>
+  <WasmEnableWebcil>false</WasmEnableWebcil>
+</PropertyGroup>
+```
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0"
+
+## Ahead-of-time (AOT) compilation
+
+Blazor WebAssembly supports ahead-of-time (AOT) compilation, where you can compile your .NET code directly into WebAssembly. AOT compilation results in runtime performance improvements at the expense of a larger app size.
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-8.0"
+
+Without enabling AOT compilation, Blazor WebAssembly apps run on the browser using a .NET [Intermediate Language (IL)](/dotnet/standard/glossary#il) interpreter implemented in WebAssembly with partial [just-in-time (JIT)](/dotnet/standard/glossary#jit) runtime support, informally referred to as the *Jiterpreter*. Because the .NET IL code is interpreted, apps typically run slower than they would on a server-side .NET JIT runtime without any IL interpretation. AOT compilation addresses this performance issue by compiling an app's .NET code directly into WebAssembly for native WebAssembly execution by the browser. The AOT performance improvement can yield dramatic improvements for apps that execute CPU-intensive tasks. The drawback to using AOT compilation is that AOT-compiled apps are generally larger than their IL-interpreted counterparts, so they usually take longer to download to the client when first requested.
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-8.0"
+
+Without enabling AOT compilation, Blazor WebAssembly apps run on the browser using a .NET [Intermediate Language (IL)](/dotnet/standard/glossary#il) interpreter implemented in WebAssembly. Because the .NET code is interpreted, apps typically run slower than they would on a server-side .NET [just-in-time (JIT)](/dotnet/standard/glossary#jit) runtime. AOT compilation addresses this performance issue by compiling an app's .NET code directly into WebAssembly for native WebAssembly execution by the browser. The AOT performance improvement can yield dramatic improvements for apps that execute CPU-intensive tasks. The drawback to using AOT compilation is that AOT-compiled apps are generally larger than their IL-interpreted counterparts, so they usually take longer to download to the client when first requested.
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0"
+
+For guidance on installing the .NET WebAssembly build tools, see <xref:blazor/tooling#net-webassembly-build-tools>.
+
+To enable WebAssembly AOT compilation, add the `<RunAOTCompilation>` property set to `true` to the Blazor WebAssembly app's project file:
+
+```xml
+<PropertyGroup>
+  <RunAOTCompilation>true</RunAOTCompilation>
+</PropertyGroup>
+```
+
+To compile the app to WebAssembly, publish the app. Publishing the `Release` configuration ensures the .NET Intermediate Language (IL) linking is also run to reduce the size of the published app:
+
+```dotnetcli
+dotnet publish -c Release
+```
+
+WebAssembly AOT compilation is only performed when the project is published. AOT compilation isn't used when the project is run during development (`Development` environment) because AOT compilation usually takes several minutes on small projects and potentially much longer for larger projects. Reducing the build time for AOT compilation is under development for future releases of ASP.NET Core.
+
+The size of an AOT-compiled Blazor WebAssembly app is generally larger than the size of the app if compiled into .NET IL:
+
+* Although the size difference depends on the app, most AOT-compiled apps are about twice the size of their IL-compiled versions. This means that using AOT compilation trades off load-time performance for runtime performance. Whether this tradeoff is worth using AOT compilation depends on your app. Blazor WebAssembly apps that are CPU intensive generally benefit the most from AOT compilation.
+
+* The larger size of an AOT-compiled app is due to two conditions:
+
+  * More code is required to represent high-level .NET IL instructions in native WebAssembly.
+  * AOT does ***not*** trim out managed DLLs when the app is published. Blazor requires the DLLs for [reflection metadata](/dotnet/csharp/advanced-topics/reflection-and-attributes/) and to support certain .NET runtime features. Requiring the DLLs on the client increases the download size but provides a more compatible .NET experience.
+
+> [!NOTE]
+> For [Mono](https://github.com/mono/mono)/WebAssembly MSBuild properties and targets, see [`WasmApp.targets` (dotnet/runtime GitHub repository)](https://github.com/dotnet/runtime/blob/main/src/mono/wasm/build/WasmApp.targets). Official documentation for common MSBuild properties is planned per [Document blazor msbuild configuration options (dotnet/docs #27395)](https://github.com/dotnet/docs/issues/27395).
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-8.0"
+
+## Trim .NET IL after ahead-of-time (AOT) compilation
+
+The `WasmStripILAfterAOT` MSBuild option enables removing the .NET Intermediate Language (IL) for compiled methods after performing AOT compilation to WebAssembly, which reduces the size of the `_framework` folder.
+
+In the app's project file:
+
+```xml
+<PropertyGroup>
+  <RunAOTCompilation>true</RunAOTCompilation>
+  <WasmStripILAfterAOT>true</WasmStripILAfterAOT>
+</PropertyGroup>
+```
+
+This setting trims away the IL code for most compiled methods, including methods from libraries and methods in the app. Not all compiled methods can be trimmed, as some are still required by the .NET interpreter at runtime.
+
+<!-- UPDATE 8.0 Remove the next line after some time has passed -->
+
+If you hit any issues using this trimming option, [open an issue on the `dotnet/runtime` GitHub repository](https://github.com/dotnet/runtime/issues).
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0"
+
+## Runtime relinking
+
+One of the largest parts of a Blazor WebAssembly app is the WebAssembly-based .NET runtime (`dotnet.wasm`) that the browser must download when the app is first accessed by a user's browser. Relinking the .NET WebAssembly runtime trims unused runtime code and thus improves download speed.
+
+Runtime relinking requires installation of the .NET WebAssembly build tools. For more information, see <xref:blazor/tooling#net-webassembly-build-tools>.
+
+With the .NET WebAssembly build tools installed, runtime relinking is performed automatically when an app is **published** in the `Release` configuration. The size reduction is particularly dramatic when disabling globalization. For more information, see <xref:blazor/globalization-localization#invariant-globalization>.
+
+> [!IMPORTANT]
+> Runtime relinking trims class instance JavaScript-invokable .NET methods unless they're protected. For more information, see <xref:blazor/js-interop/call-dotnet-from-javascript#avoid-trimming-javascript-invokable-net-methods>.
+
+:::moniker-end
+
+## Customize how boot resources are loaded
+
+Customize how boot resources are loaded using the `loadBootResource` API. For more information, see <xref:blazor/fundamentals/startup#load-boot-resources>.
 
 ## Compression
 
@@ -28,28 +154,39 @@ When a Blazor WebAssembly app is published, the output is statically compressed 
 * [Brotli](https://tools.ietf.org/html/rfc7932) (highest level)
 * [Gzip](https://tools.ietf.org/html/rfc1952)
 
-Blazor relies on the host to the serve the appropriate compressed files. When using an ASP.NET Core hosted project, the host project is capable of performing content negotiation and serving the statically-compressed files. When hosting a Blazor WebAssembly standalone app, additional work might be required to ensure that statically-compressed files are served:
+:::moniker range=">= aspnetcore-8.0"
+
+Blazor relies on the host to serve the appropriate compressed files. When hosting a Blazor WebAssembly standalone app, additional work might be required to ensure that statically-compressed files are served:
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-8.0"
+
+Blazor relies on the host to serve the appropriate compressed files. When using an **ASP.NET Core Hosted** Blazor WebAssembly project, the host project is capable of performing content negotiation and serving the statically-compressed files. When hosting a Blazor WebAssembly standalone app, additional work might be required to ensure that statically-compressed files are served:
+
+:::moniker-end
 
 * For IIS `web.config` compression configuration, see the [IIS: Brotli and Gzip compression](#brotli-and-gzip-compression) section. 
 * When hosting on static hosting solutions that don't support statically-compressed file content negotiation, such as GitHub Pages, consider configuring the app to fetch and decode Brotli compressed files:
 
-  * Obtain the JavaScript Brotli decoder from the [google/brotli GitHub repository](https://github.com/google/brotli). The decoder file is named `decode.js` and found in the repository's [`js` folder](https://github.com/google/brotli/tree/master/js).
+  * Obtain the JavaScript Brotli decoder from the [google/brotli GitHub repository](https://github.com/google/brotli). The minified decoder file is named `decode.min.js` and found in the repository's [`js` folder](https://github.com/google/brotli/tree/master/js).
   
     > [!NOTE]
-    > A regression is present in the minified version of the `decode.js` script (`decode.min.js`) in the [google/brotli GitHub repository](https://github.com/google/brotli). Until the issue [TypeError in decode.min.js (google/brotli #881)](https://github.com/google/brotli/issues/881) is resolved, take one of the following approaches:
-    >
-    > * Temporarily use the unminified version of the script.
-    > * Automatically minify the script at build-time with a third-party minification tool compatible with ASP.NET Core.
-    > * Use the [npm package](https://www.npmjs.com/package/brotli).
-    >
-    > The example code in this section uses the **unminified** version of the script (`decode.js`).
+    > If the minified version of the `decode.js` script (`decode.min.js`) fails, try using the unminified version (`decode.js`) instead.
 
-  * Update the app to use the decoder. Change the markup inside the closing `<body>` tag in `wwwroot/index.html` to the following:
+  * Update the app to use the decoder.
+    
+    In the `wwwroot/index.html` file, set `autostart` to `false` on Blazor's `<script>` tag:
+    
+    ```html
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    ```
+    
+    After Blazor's `<script>` tag and before the closing `</body>` tag, add the following JavaScript code `<script>` block:
   
     ```html
-    <script src="decode.js"></script>
-    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
-    <script>
+    <script type="module">
+      import { BrotliDecode } from './decode.min.js';
       Blazor.start({
         loadBootResource: function (type, name, defaultUri, integrity) {
           if (type !== 'dotnetjs' && location.hostname !== 'localhost') {
@@ -71,7 +208,30 @@ Blazor relies on the host to the serve the appropriate compressed files. When us
       });
     </script>
     ```
- 
+
+    For more information on loading boot resources, see <xref:blazor/fundamentals/startup#load-boot-resources>.
+
+
+:::moniker range=">= aspnetcore-8.0"
+
+To disable compression, add the `CompressionEnabled` MSBuild property to the app's project file and set the value to `false`:
+
+```xml
+<PropertyGroup>
+  <CompressionEnabled>false</CompressionEnabled>
+</PropertyGroup>
+```
+
+The `CompressionEnabled` property can be passed to the [`dotnet publish`](/dotnet/core/tools/dotnet-publish) command with the following syntax in a command shell:
+
+```dotnetcli
+dotnet publish -p:CompressionEnabled=false
+```
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-8.0"
+
 To disable compression, add the `BlazorEnableCompression` MSBuild property to the app's project file and set the value to `false`:
 
 ```xml
@@ -86,9 +246,11 @@ The `BlazorEnableCompression` property can be passed to the [`dotnet publish`](/
 dotnet publish -p:BlazorEnableCompression=false
 ```
 
+:::moniker-end
+
 ## Rewrite URLs for correct routing
 
-Routing requests for page components in a Blazor WebAssembly app isn't as straightforward as routing requests in a Blazor Server, hosted app. Consider a Blazor WebAssembly app with two components:
+Routing requests for page components in a Blazor WebAssembly app isn't as straightforward as routing requests in a Blazor Server app. Consider a Blazor WebAssembly app with two components:
 
 * `Main.razor`: Loads at the root of the app and contains a link to the `About` component (`href="About"`).
 * `About.razor`: `About` component.
@@ -108,6 +270,8 @@ Because browsers make requests to Internet-based hosts for client-side pages, we
 
 When deploying to an IIS server, you can use the URL Rewrite Module with the app's published `web.config` file. For more information, see the [IIS](#iis) section.
 
+:::moniker range="< aspnetcore-8.0"
+
 ## Hosted deployment with ASP.NET Core
 
 A *hosted deployment* serves the Blazor WebAssembly app to browsers from an [ASP.NET Core app](xref:index) that runs on a web server.
@@ -120,325 +284,82 @@ For more information, see the following articles:
 * Deployment to Azure App Service: <xref:tutorials/publish-to-azure-webapp-using-vs>
 * Blazor project templates: <xref:blazor/project-structure>
 
-## Hosted deployment with multiple Blazor WebAssembly apps
+## Hosted deployment of a framework-dependent executable for a specific platform
 
-### App configuration
+To deploy a hosted Blazor WebAssembly app as a [framework-dependent executable for a specific platform](/dotnet/core/deploying/#publish-framework-dependent) (not self-contained) use the following guidance based on the tooling in use.
 
-Hosted Blazor solutions can serve multiple Blazor WebAssembly apps.
+### Visual Studio
+
+By default, a [self-contained](/dotnet/core/deploying/#publish-self-contained) deployment is configured for a generated publish profile (`.pubxml`). Confirm that the **:::no-loc text="Server":::** project's publish profile contains the `<SelfContained>` MSBuild property set to `false`.
+
+In the `.pubxml` publish profile file in the **:::no-loc text="Server":::** project's `Properties` folder:
+
+```xml
+<SelfContained>false</SelfContained>
+```
+
+Set the [Runtime Identifier (RID)](/dotnet/core/rid-catalog) using the **Target Runtime** setting in the **Settings** area of the **Publish** UI, which generates the `<RuntimeIdentifier>` MSBuild property in the publish profile:
+  
+```xml
+<RuntimeIdentifier>{RID}</RuntimeIdentifier>
+```
+
+In the preceding configuration, the `{RID}` placeholder is the [Runtime Identifier (RID)](/dotnet/core/rid-catalog).
+
+Publish the **:::no-loc text="Server":::** project in the **Release** configuration.
 
 > [!NOTE]
-> The example in this section references the use of a Visual Studio *solution*, but the use of Visual Studio and a Visual Studio solution isn't required for multiple client apps to work in a hosted Blazor WebAssembly apps scenario. If you aren't using Visual Studio, ignore the `{SOLUTION NAME}.sln` file and any other files created for Visual Studio.
+> It's possible to publish an app with publish profile settings using the .NET CLI by passing `/p:PublishProfile={PROFILE}` to the [`dotnet publish` command](/dotnet/core/tools/dotnet-publish), where the `{PROFILE}` placeholder is the profile. For more information, see the *Publish profiles* and *Folder publish example* sections in the <xref:host-and-deploy/visual-studio-publish-profiles#publish-profiles> article. If you pass the RID in the [`dotnet publish` command](/dotnet/core/tools/dotnet-publish) and not in the publish profile, use the MSBuild property (`/p:RuntimeIdentifier`) with the command, ***not*** with the `-r|--runtime` option.
 
-In the following example:
+### .NET CLI
 
-* The initial (first) client app is the default client project of a solution created from the Blazor WebAssembly project template. The first client app is accessible in a browser from the URL `/FirstApp` on either port 5001 or with a host of `firstapp.com`.
-* A second client app is added to the solution, `SecondBlazorApp.Client`. The second client app is accessible in a browser from the the URL `/SecondApp` on either port 5002 or with a host of `secondapp.com`.
+Configure a [self-contained](/dotnet/core/deploying/#publish-self-contained) deployment by placing the `<SelfContained>` MSBuild property in a `<PropertyGroup>` in the **:::no-loc text="Server":::** project's project file set to `false`:
 
-Use an existing hosted Blazor solution or create a new solution from the Blazor Hosted project template:
+```xml
+<SelfContained>false</SelfContained>
+```
 
-* In the client app's project file, add a `<StaticWebAssetBasePath>` property to the `<PropertyGroup>` with a value of `FirstApp` to set the base path for the project's static assets:
+> [!IMPORTANT]
+> The `SelfContained` property must be placed in the **:::no-loc text="Server":::** project's project file. The property can't be set correctly with the [`dotnet publish` command](/dotnet/core/tools/dotnet-publish) using the `--no-self-contained` option or the MSBuild property `/p:SelfContained=false`.
+  
+Set the [Runtime Identifier (RID)](/dotnet/core/rid-catalog) using ***either*** of the following approaches:
 
+* Option 1: Set the RID in a `<PropertyGroup>` in the **:::no-loc text="Server":::** project's project file:
+  
   ```xml
-  <PropertyGroup>
-    ...
-    <StaticWebAssetBasePath>FirstApp</StaticWebAssetBasePath>
-  </PropertyGroup>
+  <RuntimeIdentifier>{RID}</RuntimeIdentifier>
   ```
-
-* Add a second client app to the solution:
-
-  * Add a folder named `SecondClient` to the solution's folder. The solution folder created from the project template contains the following solution file and folders after the `SecondClient` folder is added:
+    
+  In the preceding configuration, the `{RID}` placeholder is the [Runtime Identifier (RID)](/dotnet/core/rid-catalog).
   
-    * `Client` (folder)
-    * `SecondClient` (folder)
-    * `Server` (folder)
-    * `Shared` (folder)
-    * `{SOLUTION NAME}.sln` (file)
-
-    The placeholder `{SOLUTION NAME}` is the solution's name.
-
-  * Create a Blazor WebAssembly app named `SecondBlazorApp.Client` in the `SecondClient` folder from the Blazor WebAssembly project template.
-
-  * In the `SecondBlazorApp.Client` app's project file:
-
-    * Add a `<StaticWebAssetBasePath>` property to the `<PropertyGroup>` with a value of `SecondApp`:
-
-      ```xml
-      <PropertyGroup>
-        ...
-        <StaticWebAssetBasePath>SecondApp</StaticWebAssetBasePath>
-      </PropertyGroup>
-      ```
-
-    * Add a project reference to the `Shared` project:
-
-      ```xml
-      <ItemGroup>
-        <ProjectReference Include="..\Shared\{SOLUTION NAME}.Shared.csproj" />
-      </ItemGroup>
-      ```
-
-      The placeholder `{SOLUTION NAME}` is the solution's name.
-
-* In the server app's project file, create a project reference for the added `SecondBlazorApp.Client` client app:
-
-  ```xml
-  <ItemGroup>
-    <ProjectReference Include="..\Client\{SOLUTION NAME}.Client.csproj" />
-    <ProjectReference Include="..\SecondClient\SecondBlazorApp.Client.csproj" />
-    <ProjectReference Include="..\Shared\{SOLUTION NAME}.Shared.csproj" />
-  </ItemGroup>
+  Publish the app in the Release configuration from the **:::no-loc text="Server":::** project:
+    
+  ```dotnetcli
+   dotnet publish -c Release
   ```
+
+* Option 2: Pass the RID in the [`dotnet publish` command](/dotnet/core/tools/dotnet-publish) as the MSBuild property (`/p:RuntimeIdentifier`), ***not*** with the `-r|--runtime` option:
   
-  The placeholder `{SOLUTION NAME}` is the solution's name.
-
-* In the server app's `Properties/launchSettings.json` file, configure the `applicationUrl` of the Kestrel profile (`{SOLUTION NAME}.Server`) to access the client apps at ports 5001 and 5002:
-
-  ```json
-  "applicationUrl": "https://localhost:5001;https://localhost:5002",
+  ```dotnetcli
+  dotnet publish -c Release /p:RuntimeIdentifier={RID}
   ```
+    
+  In the preceding command, the `{RID}` placeholder is the [Runtime Identifier (RID)](/dotnet/core/rid-catalog).
 
-* In the server app's `Startup.Configure` method (`Startup.cs`), remove the following lines, which appear after the call to <xref:Microsoft.AspNetCore.Builder.HttpsPolicyBuilderExtensions.UseHttpsRedirection%2A>:
+For more information, see the following articles:
 
-  ```csharp
-  app.UseBlazorFrameworkFiles();
-  app.UseStaticFiles();
+* [.NET application publishing overview](/dotnet/core/deploying/)
+* <xref:host-and-deploy/index>
 
-  app.UseRouting();
+:::moniker-end
 
-  app.UseEndpoints(endpoints =>
-  {
-      endpoints.MapRazorPages();
-      endpoints.MapControllers();
-      endpoints.MapFallbackToFile("index.html");
-  });
-  ```
+:::moniker range="< aspnetcore-8.0"
 
-  Add middleware that maps requests to the client apps. The following example configures the middleware to run when:
+## Hosted deployment with multiple Blazor WebAssembly apps
 
-  * The request port is either 5001 for the original client app or 5002 for the added client app.
-  * The request host is either `firstapp.com` for the original client app or `secondapp.com` for the added client app.
+For more information, see <xref:blazor/host-and-deploy/multiple-hosted-webassembly>.
 
-    > [!NOTE]
-    > The example shown in this section requires additional configuration for:
-    >
-    > * Accessing the apps at the example host domains, `firstapp.com` and `secondapp.com`.
-    > * Certificates for the client apps to enable TLS security (HTTPS).
-    >
-    > The required configuration is beyond the scope of this article and depends on how the solution is hosted. For more information see the [Host and deploy articles](xref:host-and-deploy/index).
-
-  Place the following code where the lines were removed earlier:
-
-  ```csharp
-  app.MapWhen(ctx => ctx.Request.Host.Port == 5001 || 
-      ctx.Request.Host.Equals("firstapp.com"), first =>
-  {
-      first.Use((ctx, nxt) =>
-      {
-          ctx.Request.Path = "/FirstApp" + ctx.Request.Path;
-          return nxt();
-      });
-
-      first.UseBlazorFrameworkFiles("/FirstApp");
-      first.UseStaticFiles();
-      first.UseStaticFiles("/FirstApp");
-      first.UseRouting();
-
-      first.UseEndpoints(endpoints =>
-      {
-          endpoints.MapControllers();
-          endpoints.MapFallbackToFile("/FirstApp/{*path:nonfile}", 
-              "FirstApp/index.html");
-      });
-  });
-  
-  app.MapWhen(ctx => ctx.Request.Host.Port == 5002 || 
-      ctx.Request.Host.Equals("secondapp.com"), second =>
-  {
-      second.Use((ctx, nxt) =>
-      {
-          ctx.Request.Path = "/SecondApp" + ctx.Request.Path;
-          return nxt();
-      });
-
-      second.UseBlazorFrameworkFiles("/SecondApp");
-      second.UseStaticFiles();
-      second.UseStaticFiles("/SecondApp");
-      second.UseRouting();
-
-      second.UseEndpoints(endpoints =>
-      {
-          endpoints.MapControllers();
-          endpoints.MapFallbackToFile("/SecondApp/{*path:nonfile}", 
-              "SecondApp/index.html");
-      });
-  });
-  ```
-
-* In the server app's weather forecast controller (`Controllers/WeatherForecastController.cs`), replace the existing route (`[Route("[controller]")]`) to `WeatherForecastController` with the following routes:
-
-  ```csharp
-  [Route("FirstApp/[controller]")]
-  [Route("SecondApp/[controller]")]
-  ```
-
-  The middleware added to the server app's `Startup.Configure` method earlier modifies incoming requests to `/WeatherForecast` to either `/FirstApp/WeatherForecast` or `/SecondApp/WeatherForecast` depending on the port (5001/5002) or domain (`firstapp.com`/`secondapp.com`). The preceding controller routes are required in order to return weather data from the server app to the client apps.
-
-### Static assets and class libraries
-
-Use the following approaches for static assets:
-
-* When the asset is in the client app's `wwwroot` folder, provide their paths normally:
-
-  ```razor
-  <img alt="..." src="/{ASSET FILE NAME}" />
-  ```
-
-* When the asset is in the `wwwroot` folder of a [Razor Class Library (RCL)](xref:blazor/components/class-libraries), reference the static asset in the client app per the guidance in the [RCL article](xref:razor-pages/ui-class#consume-content-from-a-referenced-rcl):
-
-  ```razor
-  <img alt="..." src="_content/{LIBRARY NAME}/{ASSET FILE NAME}" />
-  ```
-
-<!-- HOLD for reactivation at 5.x
-
-::: moniker range=">= aspnetcore-5.0"
-
-Components provided to a client app by a class library are referenced normally. If any components require stylesheets or JavaScript files, use either of the following approaches to obtain the static assets:
-
-* The client app's `wwwroot/index.html` file can link (`<link>`) to the static assets.
-* The component can use the framework's [`Link` component](xref:blazor/fundamentals/signalr#influence-html-head-tag-elements) to obtain the static assets.
-
-The preceding approaches are demonstrated in the following examples.
-
-::: moniker-end
-
-::: moniker range="< aspnetcore-5.0"
-
--->
-
-Components provided to a client app by a class library are referenced normally. If any components require stylesheets or JavaScript files, the client app's `wwwroot/index.html` file must include the correct static asset links. These approaches are demonstrated in the following examples.
-
-<!-- HOLD for reactivation at 5.x
-
-::: moniker-end
-
--->
-
-Add the following `Jeep` component to one of the client apps. The `Jeep` component uses:
-
-* An image from the client app's `wwwroot` folder (`jeep-cj.png`).
-* An image from an [added Razor component library](xref:blazor/components/class-libraries) (`JeepImage`) `wwwroot` folder (`jeep-yj.png`).
-* The example component (`Component1`) is created automatically by the RCL project template when the `JeepImage` library is added to the solution.
-
-```razor
-@page "/Jeep"
-
-<h1>1979 Jeep CJ-5&trade;</h1>
-
-<p>
-    <img alt="1979 Jeep CJ-5&trade;" src="/jeep-cj.png" />
-</p>
-
-<h1>1991 Jeep YJ&trade;</h1>
-
-<p>
-    <img alt="1991 Jeep YJ&trade;" src="_content/JeepImage/jeep-yj.png" />
-</p>
-
-<p>
-    <em>Jeep CJ-5</em> and <em>Jeep YJ</em> are a trademarks of 
-    <a href="https://www.fcagroup.com">Fiat Chrysler Automobiles</a>.
-</p>
-
-<JeepImage.Component1 />
-```
-
-> [!WARNING]
-> Do **not** publish images of vehicles publicly unless you own the images. Otherwise, you risk copyright infringement.
-
-<!-- HOLD for reactivation at 5.x
-
-::: moniker range=">= aspnetcore-5.0"
-
-The library's `jeep-yj.png` image can also be added to the library's `Component1` component (`Component1.razor`). To provide the `my-component` CSS class to the client app's page, link to the library's stylesheet using the framework's [`Link` component](xref:blazor/fundamentals/signalr#influence-html-head-tag-elements):
-
-```razor
-<div class="my-component">
-    <Link href="_content/JeepImage/styles.css" rel="stylesheet" />
-
-    <h1>JeepImage.Component1</h1>
-
-    <p>
-        This Blazor component is defined in the <strong>JeepImage</strong> package.
-    </p>
-
-    <p>
-        <img alt="1991 Jeep YJ&trade;" src="_content/JeepImage/jeep-yj.png" />
-    </p>
-</div>
-```
-
-An alternative to using the [`Link` component](xref:blazor/fundamentals/signalr#influence-html-head-tag-elements) is to load the stylesheet from the client app's `wwwroot/index.html` file. This approach makes the stylesheet available to all of the components in the client app:
-
-```html
-<head>
-    ...
-    <link href="_content/JeepImage/styles.css" rel="stylesheet" />
-</head>
-```
-
-::: moniker-end
-
-::: moniker range="< aspnetcore-5.0"
-
--->
-
-The library's `jeep-yj.png` image can also be added to the library's `Component1` component (`Component1.razor`):
-
-```razor
-<div class="my-component">
-    <h1>JeepImage.Component1</h1>
-
-    <p>
-        This Blazor component is defined in the <strong>JeepImage</strong> package.
-    </p>
-
-    <p>
-        <img alt="1991 Jeep YJ&trade;" src="_content/JeepImage/jeep-yj.png" />
-    </p>
-</div>
-```
-
-The client app's `wwwroot/index.html` file requests the library's stylesheet with the following added `<link>` tag:
-
-```html
-<head>
-    ...
-    <link href="_content/JeepImage/styles.css" rel="stylesheet" />
-</head>
-```
-
-<!-- HOLD for reactivation at 5.x
-
-::: moniker-end
-
--->
-
-Add navigation to the `Jeep` component in the client app's `NavMenu` component (`Shared/NavMenu.razor`):
-
-```razor
-<li class="nav-item px-3">
-    <NavLink class="nav-link" href="Jeep">
-        <span class="oi oi-list-rich" aria-hidden="true"></span> Jeep
-    </NavLink>
-</li>
-```
-
-For more information on RCLs, see:
-
-* <xref:blazor/components/class-libraries>
-* <xref:razor-pages/ui-class>
+:::moniker-end
 
 ## Standalone deployment
 
@@ -450,24 +371,46 @@ Standalone deployment assets are published into the `/bin/Release/{TARGET FRAMEW
 
 Blazor WebAssembly apps can be deployed to Azure App Services on Windows, which hosts the app on [IIS](#iis).
 
-Deploying a standalone Blazor WebAssembly app to Azure App Service for Linux isn't currently supported. A Linux server image to host the app isn't available at this time. Work is in progress to enable this scenario.
+Deploying a standalone Blazor WebAssembly app to Azure App Service for Linux isn't currently supported. We recommend hosting a standalone Blazor WebAssembly app using [Azure Static Web Apps](#azure-static-web-apps), which supports this scenario.
+
+### Azure Static Web Apps
+
+Deploy a Blazor WebAssembly app to Azure Static Web Apps using either of the following approaches:
+
+* [Deploy from Visual Studio](#deploy-from-visual-studio)
+* [Deploy from GitHub](#deploy-from-github)
+
+#### Deploy from Visual Studio
+
+To deploy from Visual Studio, create a publish profile for Azure Static Web Apps:
+
+1. Save any unsaved work in the project, as a Visual Studio restart might be required during the process.
+
+1. In Visual Studio's **Publish** UI, select **Target** > **Azure** > **Specific Target** > **Azure Static Web Apps** to create a [publish profile](xref:host-and-deploy/visual-studio-publish-profiles).
+
+1. If the **Azure WebJobs Tools** component for Visual Studio isn't installed, a prompt appears to install the **ASP.NET and web development** component. Follow the prompts to install the tools using the Visual Studio Installer. Visual Studio closes and reopens automatically while installing the tools. After the tools are installed, start over at the first step to create the publish profile.
+
+1. In the publish profile configuration, provide the **Subscription name**. Select an existing instance, or select **Create a new instance**. When creating a new instance in the Azure portal's **Create Static Web App** UI, set the **Deployment details** > **Source** to **Other**. Wait for the deployment to complete in the Azure portal before proceeding.
+
+1. In the publish profile configuration, select the Azure Static Web Apps instance from the instance's resource group. Select **Finish** to create the publish profile. If Visual Studio prompts to install the Static Web Apps (SWA) CLI, install the CLI by following the prompts. The SWA CLI requires [NPM/Node.js (Visual Studio documentation)](/visualstudio/javascript/npm-package-management).
+
+After the publish profile is created, deploy the app to the Azure Static Web Apps instance using the publish profile by selecting the **Publish** button.
+
+#### Deploy from GitHub
+
+To deploy from a GitHub repository, see [Tutorial: Building a static web app with Blazor in Azure Static Web Apps](/azure/static-web-apps/deploy-blazor).
 
 ### IIS
 
 IIS is a capable static file server for Blazor apps. To configure IIS to host Blazor, see [Build a Static Website on IIS](/iis/manage/creating-websites/scenario-build-a-static-website-on-iis).
 
-Published assets are created in the `/bin/Release/{TARGET FRAMEWORK}/publish` folder. Host the contents of the `publish` folder on the web server or hosting service.
+Published assets are created in the `/bin/Release/{TARGET FRAMEWORK}/publish` or `bin\Release\{TARGET FRAMEWORK}\browser-wasm\publish` folder, depending on which version of the SDK is used and where the `{TARGET FRAMEWORK}` placeholder is the target framework. Host the contents of the `publish` folder on the web server or hosting service.
 
 #### web.config
 
 When a Blazor project is published, a `web.config` file is created with the following IIS configuration:
 
-* MIME types are set for the following file extensions:
-  * `.dll`: `application/octet-stream`
-  * `.json`: `application/json`
-  * `.wasm`: `application/wasm`
-  * `.woff`: `application/font-woff`
-  * `.woff2`: `application/font-woff`
+* MIME types
 * HTTP compression is enabled for the following MIME types:
   * `application/octet-stream`
   * `application/wasm`
@@ -475,15 +418,49 @@ When a Blazor project is published, a `web.config` file is created with the foll
   * Serve the sub-directory where the app's static assets reside (`wwwroot/{PATH REQUESTED}`).
   * Create SPA fallback routing so that requests for non-file assets are redirected to the app's default document in its static assets folder (`wwwroot/index.html`).
   
-#### Use a custom web.config
+#### Use a custom `web.config`
 
-To use a custom `web.config` file, place the custom `web.config` file at the root of the project folder. Configure the project to publish IIS-specific assets using `PublishIISAssets` in the app's project file and publish the project:
+To use a custom `web.config` file:
 
-```xml
-<PropertyGroup>
-  <PublishIISAssets>true</PublishIISAssets>
-</PropertyGroup>
-```
+:::moniker range=">= aspnetcore-8.0"
+
+1. Place the custom `web.config` file in the project's root folder.
+1. Publish the project. For more information, see <xref:blazor/host-and-deploy/index>.
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-8.0"
+
+1. Place the custom `web.config` file in the project's root folder. For a hosted Blazor WebAssembly [solution](xref:blazor/tooling#visual-studio-solution-file-sln), place the file in the **:::no-loc text="Server":::** project's folder.
+1. Publish the project. For a hosted Blazor WebAssembly solution, publish the solution from the **:::no-loc text="Server":::** project. For more information, see <xref:blazor/host-and-deploy/index>.
+
+:::moniker-end
+
+If the SDK's `web.config` generation or transformation during publish either doesn't move the file to published assets in the `publish` folder or modifies the custom configuration in your custom `web.config` file, use any of the following approaches as needed to take full control of the process:
+
+* If the SDK doesn't generate the file, for example, in a standalone Blazor WebAssembly app at `/bin/Release/{TARGET FRAMEWORK}/publish/wwwroot` or `bin\Release\{TARGET FRAMEWORK}\browser-wasm\publish`, depending on which version of the SDK is used and where the `{TARGET FRAMEWORK}` placeholder is the target framework, set the `<PublishIISAssets>` property to `true` in the project file (`.csproj`). Usually for standalone WebAssembly apps, this is the only required setting to move a custom `web.config` file and prevent transformation of the file by the SDK.
+
+  ```xml
+  <PropertyGroup>
+    <PublishIISAssets>true</PublishIISAssets>
+  </PropertyGroup>
+  ```
+
+* Disable the SDK's `web.config` transformation in the project file (`.csproj`):
+
+  ```xml
+  <PropertyGroup>
+    <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
+  </PropertyGroup>
+  ```
+
+* Add a custom target to the project file (`.csproj`) to move a custom `web.config` file. In the following example, the custom `web.config` file is placed by the developer at the root of the project. If the `web.config` file resides elsewhere, specify the path to the file in `SourceFiles`. The following example specifies the `publish` folder with `$(PublishDir)`, but provide a path to `DestinationFolder` for a custom output location.
+
+  ```xml
+  <Target Name="CopyWebConfig" AfterTargets="Publish">
+    <Copy SourceFiles="web.config" DestinationFolder="$(PublishDir)" />
+  </Target>
+  ```
 
 #### Install the URL Rewrite Module
 
@@ -505,7 +482,7 @@ If a standalone app is hosted as an IIS sub-app, perform either of the following
 
 * Disable the inherited ASP.NET Core Module handler.
 
-  Remove the handler in the Blazor app's published `web.config` file by adding a `<handlers>` section to the file:
+  Remove the handler in the Blazor app's published `web.config` file by adding a `<handlers>` section to the `<system.webServer>` section of the file:
 
   ```xml
   <handlers>
@@ -528,12 +505,25 @@ If a standalone app is hosted as an IIS sub-app, perform either of the following
     </location>
   </configuration>
   ```
+  
+  > [!NOTE]
+  > Disabling inheritance of the root (parent) app's `<system.webServer>` section is the default configuration for published apps using the .NET SDK.
 
 Removing the handler or disabling inheritance is performed in addition to [configuring the app's base path](xref:blazor/host-and-deploy/index#app-base-path). Set the app base path in the app's `index.html` file to the IIS alias used when configuring the sub-app in IIS.
 
 #### Brotli and Gzip compression
 
+:::moniker range=">= aspnetcore-8.0"
+
+*This section only applies to standalone Blazor WebAssembly apps.*
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-8.0"
+
 *This section only applies to standalone Blazor WebAssembly apps. Hosted Blazor apps use a default ASP.NET Core app `web.config` file, not the file linked in this section.*
+
+:::moniker-end
 
 IIS can be configured via `web.config` to serve Brotli or Gzip compressed Blazor assets for standalone Blazor WebAssembly apps. For an example configuration file, see [`web.config`](https://github.com/dotnet/AspNetCore.Docs/blob/main/aspnetcore/blazor/host-and-deploy/webassembly/_samples/web.config?raw=true).
 
@@ -543,6 +533,8 @@ Additional configuration of the example `web.config` file might be required in t
   * Serving compressed files that aren't configured by the example `web.config` file.
   * Serving compressed files configured by the example `web.config` file in an uncompressed format.
 * The server's IIS configuration (for example, `applicationHost.config`) provides server-level IIS defaults. Depending on the server-level configuration, the app might require a different IIS configuration than what the example `web.config` file contains.
+
+For more information on custom `web.config` files, see the [Use a custom `web.config`](#use-a-custom-webconfig) section.
 
 #### Troubleshooting
 
@@ -615,6 +607,45 @@ To deploy a Blazor WebAssembly app to CentOS 7 or later:
 
 1. Create the Apache configuration file. The following example is a simplified configuration file (`blazorapp.config`):
 
+:::moniker range=">= aspnetcore-8.0"
+
+   ```
+   <VirtualHost *:80>
+       ServerName www.example.com
+       ServerAlias *.example.com
+
+       DocumentRoot "/var/www/blazorapp"
+       ErrorDocument 404 /index.html
+
+       AddType application/wasm .wasm
+   
+       <Directory "/var/www/blazorapp">
+           Options -Indexes
+           AllowOverride None
+       </Directory>
+
+       <IfModule mod_deflate.c>
+           AddOutputFilterByType DEFLATE text/css
+           AddOutputFilterByType DEFLATE application/javascript
+           AddOutputFilterByType DEFLATE text/html
+           AddOutputFilterByType DEFLATE application/octet-stream
+           AddOutputFilterByType DEFLATE application/wasm
+           <IfModule mod_setenvif.c>
+         BrowserMatch ^Mozilla/4 gzip-only-text/html
+         BrowserMatch ^Mozilla/4.0[678] no-gzip
+         BrowserMatch bMSIE !no-gzip !gzip-only-text/html
+     </IfModule>
+       </IfModule>
+
+       ErrorLog /var/log/httpd/blazorapp-error.log
+       CustomLog /var/log/httpd/blazorapp-access.log common
+   </VirtualHost>
+   ```
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-8.0"
+
    ```
    <VirtualHost *:80>
        ServerName www.example.com
@@ -638,16 +669,18 @@ To deploy a Blazor WebAssembly app to CentOS 7 or later:
            AddOutputFilterByType DEFLATE application/octet-stream
            AddOutputFilterByType DEFLATE application/wasm
            <IfModule mod_setenvif.c>
-	       BrowserMatch ^Mozilla/4 gzip-only-text/html
-	       BrowserMatch ^Mozilla/4.0[678] no-gzip
-	       BrowserMatch bMSIE !no-gzip !gzip-only-text/html
-	   </IfModule>
+         BrowserMatch ^Mozilla/4 gzip-only-text/html
+         BrowserMatch ^Mozilla/4.0[678] no-gzip
+         BrowserMatch bMSIE !no-gzip !gzip-only-text/html
+     </IfModule>
        </IfModule>
 
        ErrorLog /var/log/httpd/blazorapp-error.log
        CustomLog /var/log/httpd/blazorapp-access.log common
    </VirtualHost>
    ```
+
+:::moniker-end
 
 1. Place the Apache configuration file into the `/etc/httpd/conf.d/` directory, which is the default Apache configuration directory in CentOS 7.
 
@@ -659,15 +692,34 @@ For more information, see [`mod_mime`](https://httpd.apache.org/docs/2.4/mod/mod
 
 ### GitHub Pages
 
+The default GitHub Action, which deploys pages, skips deployment of folders starting with underscore, for example, the `_framework` folder. To deploy folders starting with underscore, add an empty `.nojekyll` file to the Git branch.
+
+Git treats JavaScript (JS) files, such as `blazor.webassembly.js`, as text and converts line endings from CRLF (carriage return-line feed) to LF (line feed) in the deployment pipeline. These changes to JS files produce different file hashes than Blazor sends to the client in the `blazor.boot.json` file. The mismatches result in integrity check failures on the client. One approach to solving this problem is to add a `.gitattributes` file with `*.js binary` line before adding the app's assets to the Git branch. The `*.js binary` line configures Git to treat JS files as binary files, which avoids processing the files in the deployment pipeline. The file hashes of the unprocessed files match the entries in the `blazor.boot.json` file, and client-side integrity checks pass. For more information, see the [Resolve integrity check failures](#resolve-integrity-check-failures) section.
+
 To handle URL rewrites, add a `wwwroot/404.html` file with a script that handles redirecting the request to the `index.html` page. For an example, see the [SteveSandersonMS/BlazorOnGitHubPages GitHub repository](https://github.com/SteveSandersonMS/BlazorOnGitHubPages):
 
 * [`wwwroot/404.html`](https://github.com/SteveSandersonMS/BlazorOnGitHubPages/blob/master/wwwroot/404.html)
-* [Live site](https://stevesandersonms.github.io/BlazorOnGitHubPages/))
+* [Live site](https://stevesandersonms.github.io/BlazorOnGitHubPages/)
 
 When using a project site instead of an organization site, update the `<base>` tag in `wwwroot/index.html`. Set the `href` attribute value to the GitHub repository name with a trailing slash (for example, `/my-repository/`). In the [SteveSandersonMS/BlazorOnGitHubPages GitHub repository](https://github.com/SteveSandersonMS/BlazorOnGitHubPages), the base `href` is updated at publish by the [`.github/workflows/main.yml` configuration file](https://github.com/SteveSandersonMS/BlazorOnGitHubPages/blob/master/.github/workflows/main.yml).
 
 > [!NOTE]
 > The [SteveSandersonMS/BlazorOnGitHubPages GitHub repository](https://github.com/SteveSandersonMS/BlazorOnGitHubPages) isn't owned, maintained, or supported by the .NET Foundation or Microsoft.
+
+### Standalone with Docker
+
+A standalone Blazor WebAssembly app is published as a set of static files for hosting by a static file server.
+
+To host the app in Docker:
+
+* Choose a Docker container with web server support, such as Ngnix or Apache.
+* Copy the `publish` folder assets to a location folder defined in the web server for serving static files.
+* Apply additional configuration as needed to serve the Blazor WebAssembly app.
+
+For configuration guidance, see the following resources:
+
+* [Nginx](#nginx) section or [Apache](#apache) section of this article
+* [Docker Documentation](https://docs.docker.com/)
 
 ## Host configuration values
 
@@ -742,155 +794,266 @@ The `--urls` argument sets the IP addresses or host addresses with ports and pro
   --urls=http://127.0.0.1:0
   ```
 
-::: moniker range=">= aspnetcore-5.0"
+:::moniker range="< aspnetcore-8.0"
+
+## Hosted deployment on Linux (Nginx)
+
+Configure the app with <xref:Microsoft.AspNetCore.Builder.ForwardedHeadersOptions> to forward the `X-Forwarded-For` and `X-Forwarded-Proto` headers by following the guidance in <xref:host-and-deploy/proxy-load-balancer>.
+
+For more information on setting the app's base path, including sub-app path configuration, see <xref:blazor/host-and-deploy/index#app-base-path>.
+
+Follow the guidance for an [ASP.NET Core SignalR app](xref:signalr/scale#linux-with-nginx) with the following changes:
+
+* Remove the configuration for proxy buffering (`proxy_buffering off;`) because the setting only applies to [Server-Sent Events (SSE)](https://developer.mozilla.org/docs/Web/API/Server-sent_events), which aren't relevant to Blazor app client-server interactions.
+* Change the `location` path from `/hubroute` (`location /hubroute { ... }`) to the sub-app path `/{PATH}` (`location /{PATH} { ... }`), where the `{PATH}` placeholder is the sub-app path.
+
+  The following example configures the server for an app that responds to requests at the root path `/`:
+
+  ```
+  http {
+      server {
+          ...
+          location / {
+              ...
+          }
+      }
+  }
+  ```
+
+  The following example configures the sub-app path of `/blazor`:
+
+  ```
+  http {
+      server {
+          ...
+          location /blazor {
+              ...
+          }
+      }
+  }
+  ```
+
+For more information and configuration guidance, consult the following resources:
+
+* <xref:host-and-deploy/linux-nginx>
+* Nginx documentation:
+  * [NGINX as a WebSocket Proxy](https://www.nginx.com/blog/websocket-nginx/)
+  * [WebSocket proxying](http://nginx.org/docs/http/websocket.html)
+* Developers on non-Microsoft support forums:
+  * [Stack Overflow (tag: `blazor`)](https://stackoverflow.com/questions/tagged/blazor)
+  * [ASP.NET Core Slack Team](https://join.slack.com/t/aspnetcore/shared_invite/zt-1mv5487zb-EOZxJ1iqb0A0ajowEbxByQ)
+  * [Blazor Gitter](https://gitter.im/aspnet/Blazor)
+
+<!-- HOLD FOR FUTURE WORK
+
+## Hosted deployment on Linux (Apache)
+
+Configure the app with <xref:Microsoft.AspNetCore.Builder.ForwardedHeadersOptions> to forward the `X-Forwarded-For` and `X-Forwarded-Proto` headers by following the guidance in <xref:host-and-deploy/proxy-load-balancer>.
+
+For more information on setting the app's base path, including sub-app path configuration, see <xref:blazor/host-and-deploy/index#app-base-path>.
+
+The following example hosts the app at a root URL (no sub-app path):
+
+```
+<VirtualHost *:*>
+    RequestHeader set "X-Forwarded-Proto" expr=%{REQUEST_SCHEME}
+</VirtualHost>
+
+<VirtualHost *:80>
+    ProxyPreserveHost On
+    ProxyPass         / http://localhost:5000/
+    ProxyPassReverse  / http://localhost:5000/
+    ProxyPassMatch    ^/_blazor/(.*) http://localhost:5000/_blazor/$1
+    ProxyPass         /_blazor ws://localhost:5000/_blazor
+    ServerName        www.example.com
+    ServerAlias       *.example.com
+    ErrorLog          ${APACHE_LOG_DIR}helloapp-error.log
+    CustomLog         ${APACHE_LOG_DIR}helloapp-access.log common
+</VirtualHost>
+```
+
+To configure the server to host the app at a sub-app path, the `{PATH}` placeholder in the following entires is the sub-app path:
+
+```
+<VirtualHost *:*>
+    RequestHeader set "X-Forwarded-Proto" expr=%{REQUEST_SCHEME}
+</VirtualHost>
+
+<VirtualHost *:80>
+    ProxyPreserveHost On
+    ProxyPass         / http://localhost:5000/{PATH}
+    ProxyPassReverse  / http://localhost:5000/{PATH}
+    ProxyPassMatch    ^/_blazor/(.*) http://localhost:5000/{PATH}/_blazor/$1
+    ProxyPass         /_blazor ws://localhost:5000/{PATH}/_blazor
+    ServerName        www.example.com
+    ServerAlias       *.example.com
+    ErrorLog          ${APACHE_LOG_DIR}helloapp-error.log
+    CustomLog         ${APACHE_LOG_DIR}helloapp-access.log common
+</VirtualHost>
+```
+
+For an app that responds to requests at `/blazor`:
+
+```
+<VirtualHost *:*>
+    RequestHeader set "X-Forwarded-Proto" expr=%{REQUEST_SCHEME}
+</VirtualHost>
+
+<VirtualHost *:80>
+    ProxyPreserveHost On
+    ProxyPass         / http://localhost:5000/blazor
+    ProxyPassReverse  / http://localhost:5000/blazor
+    ProxyPassMatch    ^/_blazor/(.*) http://localhost:5000/blazor/_blazor/$1
+    ProxyPass         /_blazor ws://localhost:5000/blazor/_blazor
+    ServerName        www.example.com
+    ServerAlias       *.example.com
+    ErrorLog          ${APACHE_LOG_DIR}helloapp-error.log
+    CustomLog         ${APACHE_LOG_DIR}helloapp-access.log common
+</VirtualHost>
+```
+
+For more information and configuration guidance, consult the following resources:
+
+* <xref:host-and-deploy/linux-apache>
+* [Apache documentation](https://httpd.apache.org/docs/current/mod/mod_proxy.html)
+* Developers on non-Microsoft support forums:
+  * [Stack Overflow (tag: `blazor`)](https://stackoverflow.com/questions/tagged/blazor)
+  * [ASP.NET Core Slack Team](https://join.slack.com/t/aspnetcore/shared_invite/zt-1mv5487zb-EOZxJ1iqb0A0ajowEbxByQ)
+  * [Blazor Gitter](https://gitter.im/aspnet/Blazor)
+
+-->
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0"
 
 ## Configure the Trimmer
 
 Blazor performs Intermediate Language (IL) trimming on each Release build to remove unnecessary IL from the output assemblies. For more information, see <xref:blazor/host-and-deploy/configure-trimmer>.
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-5.0"
+:::moniker range="< aspnetcore-5.0"
 
 ## Configure the Linker
 
 Blazor performs Intermediate Language (IL) linking on each Release build to remove unnecessary IL from the output assemblies. For more information, see <xref:blazor/host-and-deploy/configure-linker>.
 
-::: moniker-end
+:::moniker-end
 
-## Custom boot resource loading
+:::moniker range=">= aspnetcore-5.0"
 
-A Blazor WebAssembly app can be initialized with the `loadBootResource` function to override the built-in boot resource loading mechanism. Use `loadBootResource` for the following scenarios:
+## Change the file name extension of DLL files
 
-* Allow users to load static resources, such as timezone data or `dotnet.wasm` from a CDN.
-* Load compressed assemblies using an HTTP request and decompress them on the client for hosts that don't support fetching compressed contents from the server.
-* Alias resources to a different name by redirecting each `fetch` request to a new name.
+*This section applies to ASP.NET Core 6.x and 7.x. In ASP.NET Core 8.0 or later, .NET assemblies are deployed as WebAssembly files (`.wasm`) using the Webcil file format. In ASP.NET Core 8.0 or later, this section only applies if the Webcil file format has been disabled in the app's project file.*
 
-`loadBootResource` parameters appear in the following table.
+If a firewall, anti-virus program, or network security appliance is blocking the transmission of the app's dynamic-link library (DLL) files (`.dll`), you can follow the guidance in this section to change the file name extensions of the app's published DLL files.
 
-| Parameter    | Description |
-| ------------ | ----------- |
-| `type`       | The type of the resource. Permissable types: `assembly`, `pdb`, `dotnetjs`, `dotnetwasm`, `timezonedata` |
-| `name`       | The name of the resource. |
-| `defaultUri` | The relative or absolute URI of the resource. |
-| `integrity`  | The integrity string representing the expected content in the response. |
+:::moniker-end
 
-`loadBootResource` returns any of the following to override the loading process:
+:::moniker range=">= aspnetcore-8.0"
 
-* URI string. In the following example (`wwwroot/index.html`), the following files are served from a CDN at `https://my-awesome-cdn.com/`:
+> [!NOTE]
+> Changing the file name extensions of the app's DLL files might not resolve the problem because many security systems scan the content of the app's files, not merely check file extensions.
+>
+> For a more robust approach in environments that block the download and execution of DLL files, use ASP.NET Core 8.0 or later, which by default packages .NET assemblies as WebAssembly files (`.wasm`) using the [Webcil](https://github.com/dotnet/runtime/blob/main/docs/design/mono/webcil.md) file format. For more information, see the *Webcil packaging format for .NET assemblies* section in an 8.0 or later version of this article.
+>
+> Third-party approaches exist for dealing with this problem. For more information, see the resources at [Awesome Blazor](https://github.com/AdrienTorris/awesome-blazor).
 
-  * `dotnet.*.js`
-  * `dotnet.wasm`
-  * Timezone data
+:::moniker-end
 
-  ```html
-  ...
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-8.0"
 
-  <script src="_framework/blazor.webassembly.js" autostart="false"></script>
-  <script>
-    Blazor.start({
-      loadBootResource: function (type, name, defaultUri, integrity) {
-        console.log(`Loading: '${type}', '${name}', '${defaultUri}', '${integrity}'`);
-        switch (type) {
-          case 'dotnetjs':
-          case 'dotnetwasm':
-          case 'timezonedata':
-            return `https://my-awesome-cdn.com/blazorwebassembly/3.2.0/${name}`;
-        }
-      }
-    });
-  </script>
-  ```
+> [!NOTE]
+> Changing the file name extensions of the app's DLL files might not resolve the problem because many security systems scan the content of the app's files, not merely check file extensions.
+>
+> For a more robust approach in environments that block the download and execution of DLL files, take ***either*** of the following approaches:
+>
+> * Use ASP.NET Core 8.0 or later, which by default packages .NET assemblies as WebAssembly files (`.wasm`) using the [Webcil](https://github.com/dotnet/runtime/blob/main/docs/design/mono/webcil.md) file format. For more information, see the *Webcil packaging format for .NET assemblies* section in an 8.0 or later version of this article.
+> * In ASP.NET Core 6.0 or later, use a [custom deployment layout](xref:blazor/host-and-deploy/webassembly-deployment-layout).
+>
+> Third-party approaches exist for dealing with this problem. For more information, see the resources at [Awesome Blazor](https://github.com/AdrienTorris/awesome-blazor).
 
-* `Promise<Response>`. Pass the `integrity` parameter in a header to retain the default integrity-checking behavior.
+:::moniker-end
 
-  The following example (`wwwroot/index.html`) adds a custom HTTP header to the outbound requests and passes the `integrity` parameter through to the `fetch` call:
-  
-  ```html
-  <script src="_framework/blazor.webassembly.js" autostart="false"></script>
-  <script>
-    Blazor.start({
-      loadBootResource: function (type, name, defaultUri, integrity) {
-        return fetch(defaultUri, { 
-          cache: 'no-cache',
-          integrity: integrity,
-          headers: { 'MyCustomHeader': 'My custom value' }
-        });
-      }
-    });
-  </script>
-  ```
+:::moniker range=">= aspnetcore-5.0"
 
-* `null`/`undefined`, which results in the default loading behavior.
+After publishing the app, use a shell script or DevOps build pipeline to rename `.dll` files to use a different file extension in the directory of the app's published output.
 
-External sources must return the required CORS headers for browsers to allow the cross-origin resource loading. CDNs usually provide the required headers by default.
+In the following examples:
 
-You only need to specify types for custom behaviors. Types not specified to `loadBootResource` are loaded by the framework per their default loading behaviors.
+* PowerShell (PS) is used to update the file extensions.
+* `.dll` files are renamed to use the `.bin` file extension from the command line.
+* Files listed in the published `blazor.boot.json` file with a `.dll` file extension are updated to the `.bin` file extension.
+* If service worker assets are also in use, a PowerShell command updates the `.dll` files listed in the `service-worker-assets.js` file to the `.bin` file extension.
 
-## Change the filename extension of DLL files
-
-In case you have a need to change the filename extensions of the app's published `.dll` files, follow the guidance in this section.
-
-After publishing the app, use a shell script or DevOps build pipeline to rename `.dll` files to use a different file extension. Target the `.dll` files in the `wwwroot` directory of the app's published output (for example, `{CONTENT ROOT}/bin/Release/netstandard2.1/publish/wwwroot`).
-
-In the following examples, `.dll` files are renamed to use the `.bin` file extension.
+To use a different file extension than `.bin`, replace `.bin` in the following commands with the desired file extension.
 
 On Windows:
 
 ```powershell
-dir .\_framework\_bin | rename-item -NewName { $_.name -replace ".dll\b",".bin" }
-((Get-Content .\_framework\blazor.boot.json -Raw) -replace '.dll"','.bin"') | Set-Content .\_framework\blazor.boot.json
+dir {PATH} | rename-item -NewName { $_.name -replace ".dll\b",".bin" }
+((Get-Content {PATH}\blazor.boot.json -Raw) -replace '.dll"','.bin"') | Set-Content {PATH}\blazor.boot.json
 ```
 
-If service worker assets are also in use, add the following command:
+In the preceding command, the `{PATH}` placeholder is the path to the published `_framework` folder (for example, `.\bin\Release\net6.0\browser-wasm\publish\wwwroot\_framework` from the project's root folder).
+
+If service worker assets are also in use:
 
 ```powershell
-((Get-Content .\service-worker-assets.js -Raw) -replace '.dll"','.bin"') | Set-Content .\service-worker-assets.js
+((Get-Content {PATH}\service-worker-assets.js -Raw) -replace '.dll"','.bin"') | Set-Content {PATH}\service-worker-assets.js
 ```
+
+In the preceding command, the `{PATH}` placeholder is the path to the published `service-worker-assets.js` file.
 
 On Linux or macOS:
 
 ```console
-for f in _framework/_bin/*; do mv "$f" "`echo $f | sed -e 's/\.dll/.bin/g'`"; done
-sed -i 's/\.dll"/.bin"/g' _framework/blazor.boot.json
+for f in {PATH}/*; do mv "$f" "`echo $f | sed -e 's/\.dll/.bin/g'`"; done
+sed -i 's/\.dll"/.bin"/g' {PATH}/blazor.boot.json
 ```
 
-If service worker assets are also in use, add the following command:
+In the preceding command, the `{PATH}` placeholder is the path to the published `_framework` folder (for example, `.\bin\Release\net6.0\browser-wasm\publish\wwwroot\_framework` from the project's root folder).
+
+If service worker assets are also in use:
 
 ```console
-sed -i 's/\.dll"/.bin"/g' service-worker-assets.js
+sed -i 's/\.dll"/.bin"/g' {PATH}/service-worker-assets.js
 ```
-   
-To use a different file extension than `.bin`, replace `.bin` in the preceding commands.
+
+In the preceding command, the `{PATH}` placeholder is the path to the published `service-worker-assets.js` file.
 
 To address the compressed `blazor.boot.json.gz` and `blazor.boot.json.br` files, adopt either of the following approaches:
 
-* Remove the compressed `blazor.boot.json.gz` and `blazor.boot.json.br` files. Compression is disabled with this approach.
+* Remove the compressed `blazor.boot.json.gz` and `blazor.boot.json.br` files. **Compression is disabled with this approach.**
 * Recompress the updated `blazor.boot.json` file.
 
-The preceding guidance also applies when service worker assets are in use. Remove or recompress `wwwroot/service-worker-assets.js.br` and `wwwroot/service-worker-assets.js.gz`. Otherwise, file integrity checks fail in the browser.
+The preceding guidance for the compressed `blazor.boot.json` file also applies when service worker assets are in use. Remove or recompress `service-worker-assets.js.br` and `service-worker-assets.js.gz`. Otherwise, file integrity checks fail in the browser.
 
-The following Windows example uses a PowerShell script placed at the root of the project.
+The following Windows example for .NET 6.0 uses a PowerShell script placed at the root of the project. The following script, which disables compression, is the basis for further modification if you wish to recompress the `blazor.boot.json` file.
 
 `ChangeDLLExtensions.ps1:`:
 
 ```powershell
 param([string]$filepath,[string]$tfm)
-dir $filepath\bin\Release\$tfm\wwwroot\_framework\_bin | rename-item -NewName { $_.name -replace ".dll\b",".bin" }
-((Get-Content $filepath\bin\Release\$tfm\wwwroot\_framework\blazor.boot.json -Raw) -replace '.dll"','.bin"') | Set-Content $filepath\bin\Release\$tfm\wwwroot\_framework\blazor.boot.json
-Remove-Item $filepath\bin\Release\$tfm\wwwroot\_framework\blazor.boot.json.gz
+dir $filepath\bin\Release\$tfm\browser-wasm\publish\wwwroot\_framework | rename-item -NewName { $_.name -replace ".dll\b",".bin" }
+((Get-Content $filepath\bin\Release\$tfm\browser-wasm\publish\wwwroot\_framework\blazor.boot.json -Raw) -replace '.dll"','.bin"') | Set-Content $filepath\bin\Release\$tfm\browser-wasm\publish\wwwroot\_framework\blazor.boot.json
+Remove-Item $filepath\bin\Release\$tfm\browser-wasm\publish\wwwroot\_framework\blazor.boot.json.gz
+Remove-Item $filepath\bin\Release\$tfm\browser-wasm\publish\wwwroot\_framework\blazor.boot.json.br
 ```
 
-If service worker assets are also in use, add the following command:
+If service worker assets are also in use, add the following commands:
 
 ```powershell
-((Get-Content $filepath\bin\Release\$tfm\wwwroot\service-worker-assets.js -Raw) -replace '.dll"','.bin"') | Set-Content $filepath\bin\Release\$tfm\wwwroot\service-worker-assets.js
+((Get-Content $filepath\bin\Release\$tfm\browser-wasm\publish\wwwroot\service-worker-assets.js -Raw) -replace '.dll"','.bin"') | Set-Content $filepath\bin\Release\$tfm\browser-wasm\publish\wwwroot\_framework\wwwroot\service-worker-assets.js
+Remove-Item $filepath\bin\Release\$tfm\browser-wasm\publish\wwwroot\_framework\wwwroot\service-worker-assets.js.gz
+Remove-Item $filepath\bin\Release\$tfm\browser-wasm\publish\wwwroot\_framework\wwwroot\service-worker-assets.js.br
 ```
 
-In the project file, the script is run after publishing the app:
+In the project file, the script is executed after publishing the app for the `Release` configuration:
 
 ```xml
-<Target Name="ChangeDLLFileExtensions" AfterTargets="Publish" Condition="'$(Configuration)'=='Release'">
+<Target Name="ChangeDLLFileExtensions" AfterTargets="AfterPublish" Condition="'$(Configuration)'=='Release'">
   <Exec Command="powershell.exe -command &quot;&amp; { .\ChangeDLLExtensions.ps1 '$(SolutionDir)' '$(TargetFramework)'}&quot;" />
 </Target>
 ```
@@ -898,31 +1061,85 @@ In the project file, the script is run after publishing the app:
 > [!NOTE]
 > When renaming and lazy loading the same assemblies, see the guidance in <xref:blazor/webassembly-lazy-load-assemblies#onnavigateasync-events-and-renamed-assembly-files>.
 
+Usually, the app's server requires static asset configuration to serve the files with the updated extension. For an app hosted by IIS, add a MIME map entry (`<mimeMap>`) for the new file extension in the static content section (`<staticContent>`) in a custom `web.config` file. The following example assumes that the file extension is changed from `.dll` to `.bin`:
+
+```xml
+<staticContent>
+  ...
+  <mimeMap fileExtension=".bin" mimeType="application/octet-stream" />
+  ...
+</staticContent>
+```
+
+Include an update for compressed files if [compression](#compression) is in use:
+
+```
+<mimeMap fileExtension=".bin.br" mimeType="application/octet-stream" />
+<mimeMap fileExtension=".bin.gz" mimeType="application/octet-stream" />
+```
+
+Remove the entry for the `.dll` file extension:
+
+```diff
+- <mimeMap fileExtension=".dll" mimeType="application/octet-stream" />
+```
+
+Remove entries for compressed `.dll` files if [compression](#compression) is in use:
+
+```diff
+- <mimeMap fileExtension=".dll.br" mimeType="application/octet-stream" />
+- <mimeMap fileExtension=".dll.gz" mimeType="application/octet-stream" />
+```
+
+For more information on custom `web.config` files, see the [Use a custom `web.config`](#use-a-custom-webconfig) section.
+
+:::moniker-end
+
+## Prior deployment corruption
+
+Typically on deployment:
+
+* Only the files that have changed are replaced, which usually results in a faster deployment.
+* Existing files that aren't part of the new deployment are left in place for use by the new deployment.
+
+In rare cases, lingering files from a prior deployment can corrupt a new deployment. Completely deleting the existing deployment (or locally-published app prior to deployment) may resolve the issue with a corrupted deployment. Often, deleting the existing deployment ***once*** is sufficient to resolve the problem, including for a DevOps build and deploy pipeline.
+
+If you determine that clearing a prior deployment is always required when a DevOps build and deploy pipeline is in use, you can temporarily add a step to the build pipeline to delete the prior deployment for each new deployment until you troubleshoot the exact cause of the corruption.
+
 ## Resolve integrity check failures
 
-When Blazor WebAssembly downloads an app's startup files, it instructs the browser to perform integrity checks on the responses. It uses information in the `blazor.boot.json` file to specify the expected SHA-256 hash values for `.dll`, `.wasm`, and other files. This is beneficial for the following reasons:
+When Blazor WebAssembly downloads an app's startup files, it instructs the browser to perform integrity checks on the responses. Blazor sends SHA-256 hash values for DLL (`.dll`), WebAssembly (`.wasm`), and other files in the `blazor.boot.json` file, which isn't cached on clients. The file hashes of cached files are compared to the hashes in the `blazor.boot.json` file. For cached files with a matching hash, Blazor uses the cached files. Otherwise, files are requested from the server. After a file is downloaded, its hash is checked again for integrity validation. An error is generated by the browser if any downloaded file's integrity check fails.
 
-* It ensures you don't risk loading an inconsistent set of files, for example if a new deployment is applied to your web server while the user is in the process of downloading the application files. Inconsistent files could lead to undefined behavior.
-* It ensures the user's browser never caches inconsistent or invalid responses, which could prevent them from starting the app even if they manually refresh the page.
-* It makes it safe to cache the responses and not even check for server-side changes until the expected SHA-256 hashes themselves change, so subsequent page loads involve fewer requests and complete much faster.
+Blazor's algorithm for managing file integrity:
 
-If your web server returns responses that don't match the expected SHA-256 hashes, you will see an error similar to the following appear in the browser's developer console:
+* Ensures that the app doesn't risk loading an inconsistent set of files, for example if a new deployment is applied to your web server while the user is in the process of downloading the application files. Inconsistent files can result in a malfunctioning app.
+* Ensures the user's browser never caches inconsistent or invalid responses, which can prevent the app from starting even if the user manually refreshes the page.
+* Makes it safe to cache the responses and not check for server-side changes until the expected SHA-256 hashes themselves change, so subsequent page loads involve fewer requests and complete faster.
+
+If the web server returns responses that don't match the expected SHA-256 hashes, an error similar to the following example appears in the browser's developer console:
 
 > Failed to find a valid digest in the 'integrity' attribute for resource 'https://myapp.example.com/\_framework/MyBlazorApp.dll' with computed SHA-256 integrity 'IIa70iwvmEg5WiDV17OpQ5eCztNYqL186J56852RpJY='. The resource has been blocked.
 
-In most cases, this is *not* a problem with integrity checking itself. Instead, it means there is some other problem, and the integrity check is warning you about that other problem.
+In most cases, the warning doesn't indicate a problem with integrity checking. Instead, the warning usually means that some other problem exists.
+
+For Blazor WebAssembly's boot reference source, see [the `Boot.WebAssembly.ts` file in the `dotnet/aspnetcore` GitHub repository](https://github.com/dotnet/aspnetcore/blob/main/src/Components/Web.JS/src/Boot.WebAssembly.ts).
+
+[!INCLUDE[](~/includes/aspnetcore-repo-ref-source-links.md)]
 
 ### Diagnosing integrity problems
 
-When an app is built, the generated `blazor.boot.json` manifest describes the SHA-256 hashes of your boot resources (for example, `.dll`, `.wasm`, and other files) at the time that the build output is produced. The integrity check passes as long as the SHA-256 hashes in `blazor.boot.json` match the files delivered to the browser.
+When an app is built, the generated `blazor.boot.json` manifest describes the SHA-256 hashes of boot resources at the time that the build output is produced. The integrity check passes as long as the SHA-256 hashes in `blazor.boot.json` match the files delivered to the browser.
 
-Common reasons why this fails are:
+Common reasons why this fails include:
 
- * The web server's response is an error (for example, a *404 - Not Found* or a *500 - Internal Server Error*) instead of the file the browser requested. This is reported by the browser as an integrity check failure and not as a response failure.
- * Something has changed the contents of the files between the build and delivery of the files to the browser. This might happen:
-   * If you or build tools manually modify the build output.
-   * If some aspect of the deployment process modified the files. For example if you use a Git-based deployment mechanism, bear in mind that Git transparently converts Windows-style line endings to Unix-style line endings if you commit files on Windows and check them out on Linux. Changing file line endings change the SHA-256 hashes. To avoid this problem, consider [using `.gitattributes` to treat build artifacts as `binary` files](https://git-scm.com/book/en/v2/Customizing-Git-Git-Attributes).
-   * The web server modifies the file contents as part of serving them. For example, some content distribution networks (CDNs) automatically attempt to [minify](xref:client-side/bundling-and-minification#minification) HTML, thereby modifying it. You may need to disable such features.
+* The web server's response is an error (for example, a *404 - Not Found* or a *500 - Internal Server Error*) instead of the file the browser requested. This is reported by the browser as an integrity check failure and not as a response failure.
+* Something has changed the contents of the files between the build and delivery of the files to the browser. This might happen:
+  * If you or build tools manually modify the build output.
+  * If some aspect of the deployment process modified the files. For example if you use a Git-based deployment mechanism, bear in mind that Git transparently converts Windows-style line endings to Unix-style line endings if you commit files on Windows and check them out on Linux. Changing file line endings change the SHA-256 hashes. To avoid this problem, consider [using `.gitattributes` to treat build artifacts as `binary` files](https://git-scm.com/book/en/v2/Customizing-Git-Git-Attributes).
+  * The web server modifies the file contents as part of serving them. For example, some content distribution networks (CDNs) automatically attempt to [minify](xref:client-side/bundling-and-minification#minification) HTML, thereby modifying it. You may need to disable such features.
+* The `blazor.boot.json` file fails to load properly or is improperly cached on the client. Common causes include either of the following: 
+  * Misconfigured or malfunctioning custom developer code.
+  * One or more misconfigured intermediate caching layers.
 
 To diagnose which of these applies in your case:
 
@@ -934,12 +1151,12 @@ To diagnose which of these applies in your case:
 
 If you confirm that the server is returning plausibly correct data, there must be something else modifying the contents in between build and delivery of the file. To investigate this:
 
- * Examine the build toolchain and deployment mechanism in case they're modifying files after the files are built. An example of this is when Git transforms file line endings, as described earlier.
- * Examine the web server or CDN configuration in case they're set up to modify responses dynamically (for example, trying to minify HTML). It's fine for the web server to implement HTTP compression (for example, returning `content-encoding: br` or `content-encoding: gzip`), since this doesn't affect the result after decompression. However, it's *not* fine for the web server to modify the uncompressed data.
+* Examine the build toolchain and deployment mechanism in case they're modifying files after the files are built. An example of this is when Git transforms file line endings, as described earlier.
+* Examine the web server or CDN configuration in case they're set up to modify responses dynamically (for example, trying to minify HTML). It's fine for the web server to implement HTTP compression (for example, returning `content-encoding: br` or `content-encoding: gzip`), since this doesn't affect the result after decompression. However, it's *not* fine for the web server to modify the uncompressed data.
 
 ### Troubleshoot integrity PowerShell script
 
-Use the [`integrity.ps1`](https://github.com/dotnet/AspNetCore.Docs/blob/main/aspnetcore/blazor/host-and-deploy/webassembly/_samples/integrity.ps1?raw=true) PowerShell script to validate a published and deployed Blazor app. The script is provided as a starting point when the app has integrity issues that the Blazor framework can't identify. Customization of the script might be required for your apps.
+Use the [`integrity.ps1`](https://github.com/dotnet/AspNetCore.Docs/blob/main/aspnetcore/blazor/host-and-deploy/webassembly/_samples/integrity.ps1?raw=true) PowerShell script to validate a published and deployed Blazor app. The script is provided for PowerShell Core 7 or later as a starting point when the app has integrity issues that the Blazor framework can't identify. Customization of the script might be required for your apps, including if running on version of PowerShell later than version 7.2.0.
 
 The script checks the files in the `publish` folder and downloaded from the deployed app to detect issues in the different manifests that contain integrity hashes. These checks should detect the most common problems:
 
@@ -953,23 +1170,48 @@ Invoke the script with the following command in a PowerShell command shell:
 .\integrity.ps1 {BASE URL} {PUBLISH OUTPUT FOLDER}
 ```
 
+In the following example, the script is executed on a locally-running app at `https://localhost:5001/`:
+
+```powershell
+.\integrity.ps1 https://localhost:5001/ C:\TestApps\BlazorSample\bin\Release\net6.0\publish\
+```
+
 Placeholders:
 
-* `{BASE URL}`: The URL of the deployed app.
+* `{BASE URL}`: The URL of the deployed app. A trailing slash (`/`) is required.
 * `{PUBLISH OUTPUT FOLDER}`: The path to the app's `publish` folder or location where the app is published for deployment.
 
 > [!NOTE]
-> To clone the `dotnet/AspNetCore.Docs` GitHub repository to a system that uses the [Bitdefender](https://www.bitdefender.com) virus scanner, add an exception to Bitdefender for the `integrity.ps1` script. Add the exception to Bitdefender before cloning the repo to avoid having the script quarantined by the virus scanner. The following example is a typical path to the script for the cloned repo on a Windows system. Adjust the path as needed. The placeholder `{USER}` is the user's path segment.
+> When cloning the `dotnet/AspNetCore.Docs` GitHub repository, the `integrity.ps1` script might be quarantined by [Bitdefender](https://www.bitdefender.com) or another virus scanner present on the system. Usually, the file is trapped by a virus scanner's *heuristic scanning* technology, which merely looks for patterns in files that might indicate the presence of malware. To prevent the virus scanner from quarantining the file, add an exception to the virus scanner prior to cloning the repo. The following example is a typical path to the script on a Windows system. Adjust the path as needed for other systems. The placeholder `{USER}` is the user's path segment.
 >
 > ```
 > C:\Users\{USER}\Documents\GitHub\AspNetCore.Docs\aspnetcore\blazor\host-and-deploy\webassembly\_samples\integrity.ps1
 > ```
+>
+> **Warning**: *Creating virus scanner exceptions is dangerous and should only be performed when you're certain that the file is safe.*
+>
+> Comparing the checksum of a file to a valid checksum value doesn't guarantee file safety, but modifying a file in a way that maintains a checksum value isn't trivial for malicious users. Therefore, checksums are useful as a general security approach. Compare the checksum of the local `integrity.ps1` file to one of the following values:
+>
+> * SHA256: `32c24cb667d79a701135cb72f6bae490d81703323f61b8af2c7e5e5dc0f0c2bb`
+> * MD5: `9cee7d7ec86ee809a329b5406fbf21a8`
+>
+> Obtain the file's checksum on Windows OS with the following command. Provide the path and file name for the `{PATH AND FILE NAME}` placeholder and indicate the type of checksum to produce for the `{SHA512|MD5}` placeholder, either `SHA256` or `MD5`:
+>
+> ```console
+> CertUtil -hashfile {PATH AND FILE NAME} {SHA256|MD5}
+> ```
+> 
+> If you have any cause for concern that checksum validation isn't secure enough in your environment, consult your organization's security leadership for guidance.
+>
+> For more information, see [Understanding malware & other threats](/windows/security/threat-protection/intelligence/understanding-malware).
 
 ### Disable integrity checking for non-PWA apps
 
 In most cases, don't disable integrity checking. Disabling integrity checking doesn't solve the underlying problem that has caused the unexpected responses and results in losing the benefits listed earlier.
 
-There may be cases where the web server can't be relied upon to return consistent responses, and you have no choice but to disable integrity checks. To disable integrity checks, add the following to a property group in the Blazor WebAssembly project's `.csproj` file:
+There may be cases where the web server can't be relied upon to return consistent responses, and you have no choice but to temporarily disable integrity checks until the underlying problem is resolved.
+
+To disable integrity checks, add the following to a property group in the Blazor WebAssembly app's project file (`.csproj`):
 
 ```xml
 <BlazorCacheBootResources>false</BlazorCacheBootResources>
@@ -979,6 +1221,14 @@ There may be cases where the web server can't be relied upon to return consisten
 
 > [!NOTE]
 > The `BlazorCacheBootResources` property doesn't disable integrity checks for [Progressive Web Applications (PWAs)](xref:blazor/progressive-web-app). For guidance pertaining to PWAs, see the [Disable integrity checking for PWAs](#disable-integrity-checking-for-pwas) section.
+
+We can't provide an exhaustive list of scenarios where disabling integrity checking is required. Servers can answer a request in arbitrary ways outside of the scope of the Blazor framework. The framework provides the `BlazorCacheBootResources` setting to make the app runnable at the cost of *losing a guarantee of integrity that the app can provide*. Again, we don't recommend disabling integrity checking, especially for production deployments. Developers should seek to solve the underlying integrity problem that's causing integrity checking to fail.
+
+A few general cases that can cause integrity issues are:
+
+* Running on HTTP where integrity can't be checked.
+* If your deployment process modifies the files after publish in any way.
+* If your host modifies the files in any way.
 
 ### Disable integrity checking for PWAs
 
@@ -997,3 +1247,118 @@ To disable integrity checking, remove the `integrity` parameter by changing the 
 ```
 
 Again, disabling integrity checking means that you lose the safety guarantees offered by integrity checking. For example, there is a risk that if the user's browser is caching the app at the exact moment that you deploy a new version, it could cache some files from the old deployment and some from the new deployment. If that happens, the app becomes stuck in a broken state until you deploy a further update.
+
+:::moniker range=">= aspnetcore-6.0"
+
+## SignalR configuration
+
+[SignalR's hosting and scaling conditions](xref:signalr/publish-to-azure-web-app) apply to Blazor apps that use SignalR.
+
+### Transports
+
+Blazor works best when using [WebSockets](xref:fundamentals/websockets) as the SignalR transport due to lower latency, better reliability, and improved [security](xref:signalr/security). [Long Polling](https://github.com/dotnet/aspnetcore/blob/main/src/SignalR/docs/specs/TransportProtocols.md#long-polling-server-to-client-only) is used by SignalR when WebSockets isn't available or when the app is explicitly configured to use Long Polling. When deploying to Azure App Service, configure the app to use WebSockets in the Azure portal settings for the service. For details on configuring the app for Azure App Service, see the [SignalR publishing guidelines](xref:signalr/publish-to-azure-web-app).
+
+A console warning appears if Long Polling is utilized:
+
+> :::no-loc text="Failed to connect via WebSockets, using the Long Polling fallback transport. This may be due to a VPN or proxy blocking the connection.":::
+
+### Global deployment and connection failures
+
+Recommendations for global deployments to geographical data centers:
+
+* Deploy the app to the regions where most of the users reside.
+* Take into consideration the increased latency for traffic across continents.
+* For Azure hosting, use the [Azure SignalR Service](/azure/azure-signalr/signalr-overview).
+
+If a deployed app frequently displays the reconnection UI due to ping timeouts caused by Internet latency, lengthen the server and client timeouts:
+
+* **Server**
+
+  At least double the maximum roundtrip time expected between the client and the server. Test, monitor, and revise the timeouts as needed. For the SignalR hub, set the <xref:Microsoft.AspNetCore.SignalR.HubOptions.ClientTimeoutInterval> (default: 30 seconds) and <xref:Microsoft.AspNetCore.SignalR.HubOptions.HandshakeTimeout> (default: 15 seconds). The following example assumes that <xref:Microsoft.AspNetCore.SignalR.HubOptions.KeepAliveInterval> uses the default value of 15 seconds.
+
+  > [!IMPORTANT]
+  > The <xref:Microsoft.AspNetCore.SignalR.HubOptions.KeepAliveInterval> isn't directly related to the reconnection UI appearing. The Keep-Alive interval doesn't necessarily need to be changed. If the reconnection UI appearance issue is due to timeouts, the <xref:Microsoft.AspNetCore.SignalR.HubOptions.ClientTimeoutInterval> and <xref:Microsoft.AspNetCore.SignalR.HubOptions.HandshakeTimeout> can be increased and the Keep-Alive interval can remain the same. The important consideration is that if you change the Keep-Alive interval, make sure that the client timeout value is at least double the value of the Keep-Alive interval and that the Keep-Alive interval on the client matches the server setting.
+  >
+  > In the following example, the <xref:Microsoft.AspNetCore.SignalR.HubOptions.ClientTimeoutInterval> is increased to 60 seconds, and the <xref:Microsoft.AspNetCore.SignalR.HubOptions.HandshakeTimeout> is increased to 30 seconds.
+
+  In the `Program` file of the server app:
+
+   ```csharp
+   builder.Services.AddSignalR(options =>
+   {
+       options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+       options.HandshakeTimeout = TimeSpan.FromSeconds(30);
+   });
+   ```
+
+  For more information, see <xref:blazor/fundamentals/signalr#server-side-circuit-handler-options>.
+
+* **Client**
+
+  Typically, double the value used for the server's <xref:Microsoft.AspNetCore.SignalR.HubOptions.KeepAliveInterval> to set the timeout for the client's server timeout (<xref:Microsoft.AspNetCore.SignalR.Client.HubConnection.ServerTimeout>, default: 30 seconds).
+
+  > [!IMPORTANT]
+  > The Keep-Alive interval (<xref:Microsoft.AspNetCore.SignalR.Client.HubConnection.KeepAliveInterval>) isn't directly related to the reconnection UI appearing. The Keep-Alive interval doesn't necessarily need to be changed. If the reconnection UI appearance issue is due to timeouts, the server timeout can be increased and the Keep-Alive interval can remain the same. The important consideration is that if you change the Keep-Alive interval, make sure that the timeout value is at least double the value of the Keep-Alive interval and that the Keep-Alive interval on the server matches the client setting.
+  >
+  > In the following example, a custom value of 60 seconds is used for the server timeout.
+
+  When creating a hub connection in a component, set the <xref:Microsoft.AspNetCore.SignalR.Client.HubConnection.ServerTimeout> (default: 30 seconds) and <xref:Microsoft.AspNetCore.SignalR.Client.HubConnection.HandshakeTimeout> (default: 15 seconds).
+  
+  <!-- UPDATE 8.0 This needs to be cross-checked against the latest
+       tutorial guidance after the tutorial receives its final
+       round of updates. -->
+
+  The following example is based on the `Index` component in the [SignalR with Blazor tutorial](xref:blazor/tutorials/signalr-blazor). The server timeout is increased to 60 seconds, and the handshake timeout is increased to 30 seconds:
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-8.0"
+
+  ```csharp
+  protected override async Task OnInitializedAsync()
+  {
+      hubConnection = new HubConnectionBuilder()
+          .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+          .WithServerTimeout(TimeSpan.FromSeconds(60))
+          .Build();
+
+      hubConnection.HandshakeTimeout = TimeSpan.FromSeconds(30);
+
+      hubConnection.On<string, string>("ReceiveMessage", (user, message) => ...
+
+      await hubConnection.StartAsync();
+  }
+  ```
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-8.0"
+
+  ```csharp
+  protected override async Task OnInitializedAsync()
+  {
+      hubConnection = new HubConnectionBuilder()
+          .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+          .Build();
+
+      hubConnection.ServerTimeout = TimeSpan.FromSeconds(60);
+      hubConnection.HandshakeTimeout = TimeSpan.FromSeconds(30);
+
+      hubConnection.On<string, string>("ReceiveMessage", (user, message) => ...
+
+      await hubConnection.StartAsync();
+  }
+  ```
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0"
+
+  When changing the values of the server timeout (<xref:Microsoft.AspNetCore.SignalR.Client.HubConnection.ServerTimeout>) or the Keep-Alive interval (<xref:Microsoft.AspNetCore.SignalR.Client.HubConnection.KeepAliveInterval>:
+
+  * The server timeout should be at least double the value assigned to the Keep-Alive interval.
+  * The Keep-Alive interval should be less than or equal to half the value assigned to the server timeout.
+
+For more information, see <xref:blazor/fundamentals/signalr#configure-signalr-timeouts-and-keep-alive-on-the-client>.
+
+:::moniker-end

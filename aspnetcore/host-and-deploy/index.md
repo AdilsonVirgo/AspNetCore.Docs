@@ -1,17 +1,16 @@
 ---
 title: Host and deploy ASP.NET Core
-author: rick-anderson
+author: tdykstra
 description: Learn how to set up hosting environments and deploy ASP.NET Core apps.
 monikerRange: '>= aspnetcore-2.1'
 ms.author: riande
 ms.custom: mvc
 ms.date: 02/07/2020
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: host-and-deploy/index
 ---
 # Host and deploy ASP.NET Core
 
-::: moniker range=">= aspnetcore-2.2"
+:::moniker range=">= aspnetcore-2.2"
 
 In general, to deploy an ASP.NET Core app to a hosting environment:
 
@@ -22,6 +21,10 @@ In general, to deploy an ASP.NET Core app to a hosting environment:
 ## Publish to a folder
 
 The [dotnet publish](/dotnet/core/tools/dotnet-publish) command compiles app code and copies the files required to run the app into a *publish* folder. When deploying from Visual Studio, the `dotnet publish` step occurs automatically before the files are copied to the deployment destination.
+
+### Run the published app locally
+
+To run the published app locally, run `dotnet <ApplicationName>.dll` from the *publish* folder.
 
 ## Publish settings files
 
@@ -57,17 +60,17 @@ An ASP.NET Core app is a console app that must be started when a server boots an
 
 If the app uses the [Kestrel](xref:fundamentals/servers/kestrel) server, [Nginx](xref:host-and-deploy/linux-nginx), [Apache](xref:host-and-deploy/linux-apache), or [IIS](xref:host-and-deploy/iis/index) can be used as a reverse proxy server. A reverse proxy server receives HTTP requests from the Internet and forwards them to Kestrel.
 
-::: moniker-end 
+:::moniker-end 
 
-::: moniker range=">= aspnetcore-5.0"
+:::moniker range=">= aspnetcore-5.0"
 Either configuration&mdash;with or without a reverse proxy server&mdash;is a supported hosting configuration. For more information, see [When to use Kestrel with a reverse proxy](xref:fundamentals/servers/kestrel/when-to-use-a-reverse-proxy).
-::: moniker-end
+:::moniker-end
 
-::: moniker range=">= aspnetcore-2.2 < aspnetcore-5.0"
+:::moniker range=">= aspnetcore-2.2 < aspnetcore-5.0"
 Either configuration&mdash;with or without a reverse proxy server&mdash;is a supported hosting configuration. For more information, see [When to use Kestrel with a reverse proxy](xref:fundamentals/servers/kestrel#when-to-use-kestrel-with-a-reverse-proxy).
-::: moniker-end
+:::moniker-end
 
-::: moniker range=">= aspnetcore-2.2"
+:::moniker range=">= aspnetcore-2.2"
 
 ## Proxy server and load balancer scenarios
 
@@ -75,9 +78,9 @@ Additional configuration might be required for apps hosted behind proxy servers 
 
 ## Use Visual Studio and MSBuild to automate deployments
 
-Deployment often requires additional tasks besides copying the output from [dotnet publish](/dotnet/core/tools/dotnet-publish) to a server. For example, extra files might be required or excluded from the *publish* folder. Visual Studio uses [MSBuild](/visualstudio/msbuild/msbuild) for web deployment, and MSBuild can be customized to do many other tasks during deployment. For more information, see <xref:host-and-deploy/visual-studio-publish-profiles> and the [Using MSBuild and Team Foundation Build](http://msbuildbook.com/) book.
+Deployment often requires additional tasks besides copying the output from [dotnet publish](/dotnet/core/tools/dotnet-publish) to a server. For example, extra files might be required or excluded from the *publish* folder. Visual Studio uses [MSBuild](/visualstudio/msbuild/msbuild) for web deployment, and MSBuild can be customized to do many other tasks during deployment. For more information, see <xref:host-and-deploy/visual-studio-publish-profiles> and the [Using MSBuild and Team Foundation Build](https://www.microsoftpressstore.com/store/inside-the-microsoft-build-engine-using-msbuild-and-9780735645240) book.
 
-By using [the Publish Web feature](xref:tutorials/publish-to-azure-webapp-using-vs) or [built-in Git support](xref:host-and-deploy/azure-apps/azure-continuous-deployment), apps can be deployed directly from Visual Studio to the Azure App Service. Azure DevOps Services supports [continuous deployment to Azure App Service](/azure/devops/pipelines/targets/webapp). For more information, see [DevOps with ASP.NET Core and Azure](xref:azure/devops/index).
+By using [the Publish Web feature](xref:tutorials/publish-to-azure-webapp-using-vs) apps can be deployed directly from Visual Studio to the Azure App Service. Azure DevOps Services supports [continuous deployment to Azure App Service](/azure/devops/pipelines/targets/webapp). For more information, see [DevOps for ASP.NET Core Developers](/dotnet/architecture/devops-for-aspnet-developers).
 
 ## Publish to Azure
 
@@ -108,9 +111,9 @@ Use Health Check Middleware to perform health checks on an app and its dependenc
 * <xref:test/troubleshoot>
 * [ASP.NET Hosting](https://dotnet.microsoft.com/apps/aspnet/hosting)
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-2.2"
+:::moniker range="< aspnetcore-2.2"
 
 In general, to deploy an ASP.NET Core app to a hosting environment:
 
@@ -153,9 +156,9 @@ Additional configuration might be required for apps hosted behind proxy servers 
 
 ## Use Visual Studio and MSBuild to automate deployments
 
-Deployment often requires additional tasks besides copying the output from [dotnet publish](/dotnet/core/tools/dotnet-publish) to a server. For example, extra files might be required or excluded from the *publish* folder. Visual Studio uses MSBuild for web deployment, and MSBuild can be customized to do many other tasks during deployment. For more information, see <xref:host-and-deploy/visual-studio-publish-profiles> and the [Using MSBuild and Team Foundation Build](http://msbuildbook.com/) book.
+Deployment often requires additional tasks besides copying the output from [dotnet publish](/dotnet/core/tools/dotnet-publish) to a server. For example, extra files might be required or excluded from the *publish* folder. Visual Studio uses MSBuild for web deployment, and MSBuild can be customized to do many other tasks during deployment. For more information, see <xref:host-and-deploy/visual-studio-publish-profiles> and the [Using MSBuild and Team Foundation Build](https://www.microsoftpressstore.com/store/inside-the-microsoft-build-engine-using-msbuild-and-9780735645240) book.
 
-By using [the Publish Web feature](xref:tutorials/publish-to-azure-webapp-using-vs) or [built-in Git support](xref:host-and-deploy/azure-apps/azure-continuous-deployment), apps can be deployed directly from Visual Studio to the Azure App Service. Azure DevOps Services supports [continuous deployment to Azure App Service](/azure/devops/pipelines/targets/webapp). For more information, see [DevOps with ASP.NET Core and Azure](xref:azure/devops/index).
+By using [the Publish Web feature](xref:tutorials/publish-to-azure-webapp-using-vs), apps can be deployed directly from Visual Studio to the Azure App Service. Azure DevOps Services supports [continuous deployment to Azure App Service](/azure/devops/pipelines/targets/webapp). For more information, see [DevOps for ASP.NET Core Developers](/dotnet/architecture/devops-for-aspnet-developers).
 
 ## Publish to Azure
 
@@ -182,4 +185,4 @@ For more information, see <xref:host-and-deploy/docker/index>.
 * <xref:test/troubleshoot>
 * [ASP.NET Hosting](https://dotnet.microsoft.com/apps/aspnet/hosting)
 
-::: moniker-end
+:::moniker-end

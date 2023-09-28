@@ -4,7 +4,6 @@ author: rick-anderson
 description: Discover how to replace machineKey in ASP.NET to allow the use of a new and more secure data protection system.
 ms.author: riande
 ms.date: 04/06/2019
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: security/data-protection/compatibility/replacing-machinekey
 ---
 # Replace the ASP.NET machineKey in ASP.NET Core
@@ -20,7 +19,7 @@ The implementation of the `<machineKey>` element in ASP.NET [is replaceable](htt
 
 To install the new data protection system into an existing ASP.NET 4.5.1+ project, install the package Microsoft.AspNetCore.DataProtection.SystemWeb. This will instantiate the data protection system using the [default configuration](xref:security/data-protection/configuration/default-settings) settings.
 
-When you install the package, it inserts a line into *Web.config* that tells ASP.NET to use it for [most cryptographic operations](https://blogs.msdn.microsoft.com/webdev/2012/10/23/cryptographic-improvements-in-asp-net-4-5-pt-2/), including forms authentication, view state, and calls to MachineKey.Protect. The line that's inserted reads as follows.
+When you install the package, it inserts a line into *Web.config* that tells ASP.NET to use it for [most cryptographic operations](https://blogs.msdn.microsoft.com/webdev/2012/10/23/cryptographic-improvements-in-asp-net-4-5-pt-2/), including forms authentication, view state, and calls to MachineKey.Protect. It does not use the [data protection API](xref:security/data-protection/using-data-protection). The line that's inserted reads as follows.
 
 ```xml
 <machineKey compatibilityMode="Framework45" dataProtectorType="..." />

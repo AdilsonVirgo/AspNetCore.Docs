@@ -66,7 +66,7 @@ namespace ErrorHandlingSample
             env.EnvironmentName = "Development";
 #endif
 #if ErrorHandlerPage
-            #region snippet_DevPageAndHandlerPage
+            // <snippet_DevPageAndHandlerPage>
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -76,10 +76,10 @@ namespace ErrorHandlingSample
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
-            #endregion
+            // </snippet_DevPageAndHandlerPage>
 #endif
 #if ErrorHandlerLambda
-            #region snippet_HandlerPageLambda
+            // <snippet_HandlerPageLambda>
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -90,7 +90,7 @@ namespace ErrorHandlingSample
                {
                     errorApp.Run(async context =>
                     {
-                        context.Response.StatusCode = 500;
+                        context.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
                         context.Response.ContentType = "text/html";
 
                         await context.Response.WriteAsync("<html lang=\"en\"><body>\r\n");
@@ -111,23 +111,22 @@ namespace ErrorHandlingSample
                 });
                 app.UseHsts();
             }
-            #endregion
+            // </snippet_HandlerPageLambda>
 #endif
 
 #if StatusCodePages
-            #region snippet_StatusCodePages
+            // <snippet_StatusCodePages>
             app.UseStatusCodePages();
-            #endregion
+            // </snippet_StatusCodePages>
 #endif
 #if StatusCodePagesWithFormatString
-            #region snippet_StatusCodePagesFormatString
+            // <snippet_StatusCodePagesFormatString>
             app.UseStatusCodePages(
                 "text/plain", "Status code page, status code: {0}");            
-            #endregion
+            // </snippet_StatusCodePagesFormatString>
 #endif
 #if StatusCodePagesWithLambda
-            #region snippet_StatusCodePagesLambda
-
+            // <snippet_StatusCodePagesLambda>
             app.UseStatusCodePages(async context =>
             {
                 context.HttpContext.Response.ContentType = "text/plain";
@@ -136,18 +135,18 @@ namespace ErrorHandlingSample
                     "Status code page, status code: " + 
                     context.HttpContext.Response.StatusCode);
             });
-            #endregion
+            // </snippet_StatusCodePagesLambda>
 #endif
 #if StatusCodePagesWithRedirect
-            #region snippet_StatusCodePagesWithRedirect
+            // <snippet_StatusCodePagesWithRedirect>
             app.UseStatusCodePagesWithRedirects("/StatusCode?code={0}");
-            #endregion
+            // </snippet_StatusCodePagesWithRedirect>
 #endif
 
 #if StatusCodePagesWithReExecute
-            #region snippet_StatusCodePagesWithReExecute
+            // <snippet_StatusCodePagesWithReExecute>
             app.UseStatusCodePagesWithReExecute("/StatusCode","?code={0}");
-            #endregion
+            // </snippet_StatusCodePagesWithReExecute>
 #endif
 
             app.UseHttpsRedirection();

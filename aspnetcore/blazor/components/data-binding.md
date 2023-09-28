@@ -1,121 +1,508 @@
 ---
 title: ASP.NET Core Blazor data binding
 author: guardrex
-description: Learn about data binding features for components and DOM elements in Blazor apps.
+description: Learn about data binding features for Razor components and DOM elements in Blazor apps.
 monikerRange: '>= aspnetcore-3.1'
 ms.author: riande
 ms.custom: mvc
-ms.date: 10/22/2020
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 11/08/2022
 uid: blazor/components/data-binding
 ---
 # ASP.NET Core Blazor data binding
 
-Razor components provide data binding features via an HTML element attribute named [`@bind`](xref:mvc/views/razor#bind) with a field, property, or Razor expression value.
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
-The following example binds an `<input>` element to the `currentValue` field and an `<input>` element to the `CurrentValue` property:
+This article explains data binding features for Razor components and DOM elements in Blazor apps.
+
+Razor components provide data binding features with the [`@bind`](xref:mvc/views/razor#bind) Razor directive attribute with a field, property, or Razor expression value.
+
+The following example binds:
+
+* An `<input>` element value to the C# `inputValue` field.
+* A second `<input>` element value to the C# `InputValue` property.
+
+When an `<input>` element loses focus, its bound field or property is updated.
+
+`Bind.razor`:
+
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Pages/data-binding/Bind.razor" highlight="4,8":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Pages/data-binding/Bind.razor" highlight="4,8":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Pages/data-binding/Bind.razor" highlight="4,8":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Pages/data-binding/Bind.razor" highlight="4,8":::
+
+:::moniker-end
+
+The text box is updated in the UI only when the component is rendered, not in response to changing the field's or property's value. Since components render themselves after event handler code executes, field and property updates are usually reflected in the UI immediately after an event handler is triggered.
+
+As a demonstration of how data binding composes in HTML, the following example binds the `InputValue` property to the second `<input>` element's `value` and `onchange` attributes ([`change`](https://developer.mozilla.org/docs/Web/API/HTMLElement/change_event)). *The second `<input>` element in the following example is a concept demonstration and isn't meant to suggest how you should bind data in Razor components.*
+
+`BindTheory.razor`:
+
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Pages/data-binding/BindTheory.razor" highlight="12-14":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Pages/data-binding/BindTheory.razor" highlight="12-14":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Pages/data-binding/BindTheory.razor" highlight="12-14":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Pages/data-binding/BindTheory.razor" highlight="12-14":::
+
+:::moniker-end
+
+When the `BindTheory` component is rendered, the `value` of the HTML demonstration `<input>` element comes from the `InputValue` property. When the user enters a value in the text box and changes element focus, the `onchange` event is fired and the `InputValue` property is set to the changed value. In reality, code execution is more complex because [`@bind`](xref:mvc/views/razor#bind) handles cases where type conversions are performed. In general, [`@bind`](xref:mvc/views/razor#bind) associates the current value of an expression with the `value` attribute of the `<input>` and handles changes using the registered handler.
+
+Bind a property or field on other DOM events by including an `@bind:event="{EVENT}"` attribute with a DOM event for the `{EVENT}` placeholder. The following example binds the `InputValue` property to the `<input>` element's value when the element's `oninput` event ([`input`](https://developer.mozilla.org/docs/Web/API/HTMLElement/input_event)) is triggered. Unlike the `onchange` event ([`change`](https://developer.mozilla.org/docs/Web/API/HTMLElement/change_event)), which fires when the element loses focus, `oninput` ([`input`](https://developer.mozilla.org/docs/Web/API/HTMLElement/input_event)) fires when the value of the text box changes.
+
+`Page/BindEvent.razor`:
+
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Pages/data-binding/BindEvent.razor" highlight="4":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Pages/data-binding/BindEvent.razor" highlight="4":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Pages/data-binding/BindEvent.razor" highlight="4":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Pages/data-binding/BindEvent.razor" highlight="4":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-7.0"
+
+Razor attribute binding is case-sensitive:
+
+* `@bind` and `@bind:event` are valid.
+* `@Bind`/`@Bind:Event` (capital letters `B` and `E`) or `@BIND`/`@BIND:EVENT` (all capital letters) **are invalid**.
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-7.0"
+
+To execute asynchronous logic after binding, use `@bind:after="{EVENT}"` with a DOM event for the `{EVENT}` placeholder. An assigned C# method isn't executed until the bound value is assigned synchronously.
+
+Using an event callback parameter (`[Parameter] public EventCallback<string> ValueChanged { get; set; }`) with `@bind:after` isn't supported. Instead, pass a method that returns an <xref:System.Action> or <xref:System.Threading.Tasks.Task> to `@bind:after`.
+
+In the following example:
+
+* The `<input>` element's `value` is bound to the value of `searchText` synchronously.
+* After each keystroke (`onchange` event) in the field, the `PerformSearch` method executes asynchronously.
+* `PerformSearch` calls a service with an asynchronous method (`FetchAsync`) to return search results.
+
+```razor
+@inject ISearchService SearchService
+
+<input @bind="searchText" @bind:after="PerformSearch" />
+
+@code {
+    private string? searchText;
+    private string[]? searchResult;
+
+    private async Task PerformSearch()
+    {
+        searchResult = await SearchService.FetchAsync(searchText);
+    }
+}
+```
+
+Additional examples
+
+`BindAfter.razor`:
+
+```razor
+@page "/bind-after"
+@using Microsoft.AspNetCore.Components.Forms
+
+<h1>Bind After Examples</h1>
+
+<h2>Elements</h2>
+
+<input type="text" @bind="text" @bind:after="() => { }" />
+
+<input type="text" @bind="text" @bind:after="After" />
+
+<input type="text" @bind="text" @bind:after="AfterAsync" />
+
+<h2>Components</h2>
+
+<InputText @bind-Value="text" @bind-Value:after="() => { }" />
+
+<InputText @bind-Value="text" @bind-Value:after="After" />
+
+<InputText @bind-Value="text" @bind-Value:after="AfterAsync" />
+
+@code {
+    private string text = "";
+
+    private void After() {}
+    private Task AfterAsync() { return Task.CompletedTask; }
+}
+```
+
+For more information on the `InputText` component, see <xref:blazor/forms-and-input-components>.
+
+Components support two-way data binding by defining a pair of parameters:
+
+* `@bind:get`: Specifies the value to bind.
+* `@bind:set`: Specifies a callback for when the value changes.
+
+The `@bind:get` and `@bind:set` modifiers are always used together.
+
+Using an event callback parameter with `@bind:set` (`[Parameter] public EventCallback<string> ValueChanged { get; set; }`) isn't supported. Instead, pass a method that returns an <xref:System.Action> or <xref:System.Threading.Tasks.Task> to `@bind:set`.
+
+Examples
+
+`BindGetSet.razor`:
+
+```razor
+@page "/bind-get-set"
+@using Microsoft.AspNetCore.Components.Forms
+
+<h1>Bind Get Set Examples</h1>
+
+<h2>Elements</h2>
+
+<input type="text" @bind:get="text" @bind:set="(value) => { text = value; }" />
+<input type="text" @bind:get="text" @bind:set="Set" />
+<input type="text" @bind:get="text" @bind:set="SetAsync" />
+
+<h2>Components</h2>
+
+<InputText @bind-Value:get="text" @bind-Value:set="(value) => { text = value; }" />
+<InputText @bind-Value:get="text" @bind-Value:set="Set" />
+<InputText @bind-Value:get="text" @bind-Value:set="SetAsync" />
+
+@code {
+    private string text = "";
+
+    private void Set(string value)
+    {
+        text = value;
+    }
+
+    private Task SetAsync(string value)
+    {
+        text = value;
+        return Task.CompletedTask;
+    }
+}
+```
+
+For more information on the `InputText` component, see <xref:blazor/forms-and-input-components>.
+
+For another example use of `@bind:get` and `@bind:set`, see the [Bind across more than two components](#bind-across-more-than-two-components) section later in this article.
+
+Razor attribute binding is case-sensitive:
+
+* `@bind`, `@bind:event`, and `@bind:after` are valid.
+* `@Bind`/`@bind:Event`/`@bind:aftEr` (capital letters) or `@BIND`/`@BIND:EVENT`/`@BIND:AFTER` (all capital letters) **are invalid**.
+
+## Use `@bind:get`/`@bind:set` modifiers and avoid event handlers for two-way data binding
+
+Two-way data binding isn't possible to implement with an event handler. Use `@bind:get`/`@bind:set` modifiers for two-way data binding.
+
+<span aria-hidden="true">❌</span> Consider the following ***dysfunctional approach*** for two-way data binding using an event handler:
 
 ```razor
 <p>
-    <input @bind="currentValue" /> Current value: @currentValue
+    <input value="@inputValue" @oninput="OnInput" />
 </p>
 
 <p>
-    <input @bind="CurrentValue" /> Current value: @CurrentValue
+    <code>inputValue</code>: @inputValue
 </p>
 
 @code {
-    private string currentValue;
+    private string? inputValue;
 
-    private string CurrentValue { get; set; }
+    private void OnInput(ChangeEventArgs args)
+    {
+        var newValue = args.Value?.ToString() ?? string.Empty;
+
+        inputValue = newValue.Length > 4 ? "Long!" : newValue;
+    }
 }
 ```
 
-When one of the elements loses focus, its bound field or property is updated.
+The `OnInput` event handler updates the value of `inputValue` to `Long!` after a fourth character is provided. However, the user can continue adding characters to the element value in the UI. The value of `inputValue` isn't bound back to the element's value with each keystroke. The preceding example is only capable of one-way data binding.
 
-The text box is updated in the UI only when the component is rendered, not in response to changing the field's or property's value. Since components render themselves after event handler code executes, field and property updates are *usually* reflected in the UI immediately after an event handler is triggered.
+The reason for this behavior is that Blazor isn't aware that your code intends to modify the value of `inputValue` in the event handler. Blazor doesn't try to force DOM element values and .NET variable values to match unless they're bound with `@bind` syntax. In earlier versions of Blazor, two-way data binding is implemented by [binding the element to a property and controlling the property's value with its setter](#binding-to-a-property-with-c-get-and-set-accessors). In ASP.NET Core 7.0 or later, `@bind:get`/`@bind:set` modifier syntax is used to implement two-way data binding, as the next example demonstrates.
 
-Using [`@bind`](xref:mvc/views/razor#bind) with the `CurrentValue` property (`<input @bind="CurrentValue" />`) is essentially equivalent to the following:
+<span aria-hidden="true">✔️</span> Consider the following ***correct approach*** using `@bind:get`/`@bind:set` for two-way data binding:
 
 ```razor
-<input value="@CurrentValue"
-    @onchange="@((ChangeEventArgs __e) => CurrentValue = 
-        __e.Value.ToString())" />
+<p>
+    <input @bind:event="oninput" @bind:get="inputValue" @bind:set="OnInput" />
+</p>
+
+<p>
+    <code>inputValue</code>: @inputValue
+</p>
 
 @code {
-    private string CurrentValue { get; set; }
+    private string? inputValue;
+
+    private void OnInput(string value)
+    {
+        var newValue = value ?? string.Empty;
+
+        inputValue = newValue.Length > 4 ? "Long!" : newValue;
+    }
 }
 ```
 
-When the component is rendered, the `value` of the input element comes from the `CurrentValue` property. When the user types in the text box and changes element focus, the `onchange` event is fired and the `CurrentValue` property is set to the changed value. In reality, the code generation is more complex than that because [`@bind`](xref:mvc/views/razor#bind) handles cases where type conversions are performed. In principle, [`@bind`](xref:mvc/views/razor#bind) associates the current value of an expression with a `value` attribute and handles changes using the registered handler.
+Using `@bind:get`/`@bind:set` modifiers both controls the underlying value of `inputValue` via `@bind:set` and binds the value of `inputValue` to the element's value via `@bind:get`. The preceding example demonstrates the correct approach for implementing two-way data binding.
 
-Bind a property or field on other events by also including an `@bind:event` attribute with an `event` parameter. The following example binds the `CurrentValue` property on the `oninput` event:
+:::moniker-end
+
+## Binding to a property with C# `get` and `set` accessors
+
+[C# `get` and `set` accessors](/dotnet/csharp/programming-guide/classes-and-structs/using-properties) can be used to create custom binding format behavior, as the following `DecimalBinding` component demonstrates. The component binds a positive or negative decimal with up to three decimal places to an `<input>` element by way of a `string` property (`DecimalValue`).
+
+`DecimalBinding.razor`:
+
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Pages/data-binding/DecimalBinding.razor" highlight="7,21-31":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Pages/data-binding/DecimalBinding.razor" highlight="7,21-31":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Pages/data-binding/DecimalBinding.razor" highlight="7,21-31":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Pages/data-binding/DecimalBinding.razor" highlight="7,21-31":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-7.0"
+
+> [!NOTE]
+> Two-way binding to a property with `get`/`set` accessors requires discarding the <xref:System.Threading.Tasks.Task> returned by <xref:Microsoft.AspNetCore.Components.EventCallback.InvokeAsync%2A?displayProperty=nameWithType>. For two-way data binding, we recommend using `@bind:get`/`@bind:set` modifiers. For more information, see the `@bind:get`/`@bind:set` guidance in the earlier in this article.
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-7.0"
+
+> [!NOTE]
+> Two-way binding to a property with `get`/`set` accessors requires discarding the <xref:System.Threading.Tasks.Task> returned by <xref:Microsoft.AspNetCore.Components.EventCallback.InvokeAsync%2A?displayProperty=nameWithType>. For two-way data binding in ASP.NET Core 7.0 or later, we recommend using `@bind:get`/`@bind:set` modifiers, which are described in 7.0 or later versions of this article.
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0"
+
+## Multiple option selection with `<select>` elements
+
+Binding supports [`multiple`](https://developer.mozilla.org/docs/Web/HTML/Attributes/multiple) option selection with `<select>` elements. The [`@onchange`](xref:mvc/views/razor#onevent) event provides an array of the selected elements via [event arguments (`ChangeEventArgs`)](xref:blazor/components/event-handling#event-arguments). The value must be bound to an array type.
+
+`BindMultipleInput.razor`:
 
 ```razor
-<input @bind="CurrentValue" @bind:event="oninput" />
+@page "/bind-multiple-input"
+
+<h1>Bind Multiple <code>input</code>Example</h1>
+
+<p>
+    <label>
+        Select one or more cars: 
+        <select @onchange="SelectedCarsChanged" multiple>
+            <option value="audi">Audi</option>
+            <option value="jeep">Jeep</option>
+            <option value="opel">Opel</option>
+            <option value="saab">Saab</option>
+            <option value="volvo">Volvo</option>
+        </select>
+    </label>
+</p>
+
+<p>
+    Selected Cars: @string.Join(", ", SelectedCars)
+</p>
+
+<p>
+    <label>
+        Select one or more cities: 
+        <select @bind="SelectedCities" multiple>
+            <option value="bal">Baltimore</option>
+            <option value="la">Los Angeles</option>
+            <option value="pdx">Portland</option>
+            <option value="sf">San Francisco</option>
+            <option value="sea">Seattle</option>
+        </select>
+    </label>
+</p>
+
+<span>
+    Selected Cities: @string.Join(", ", SelectedCities)
+</span>
 
 @code {
-    private string CurrentValue { get; set; }
+    public string[] SelectedCars { get; set; } = new string[] { };
+    public string[] SelectedCities { get; set; } = new[] { "bal", "sea" };
+
+    private void SelectedCarsChanged(ChangeEventArgs e)
+    {
+        if (e.Value is not null)
+        {
+            SelectedCars = (string[])e.Value;
+        }
+    }
 }
 ```
 
-Unlike `onchange`, which fires when the element loses focus, `oninput` fires when the value of the text box changes.
+For information on how empty strings and `null` values are handled in data binding, see the [Binding `<select>` element options to C# object `null` values](#binding-select-element-options-to-c-object-null-values) section.
 
-<!-- Hold location for resolution of https://github.com/dotnet/AspNetCore.Docs/issues/19721 -->
+:::moniker-end
 
-Attribute binding is case sensitive:
+## Binding `<select>` element options to C# object `null` values
 
-* `@bind` is valid.
-* `@Bind` and `@BIND` are invalid.
+There's no sensible way to represent a `<select>` element option value as a C# object `null` value, because:
+
+* HTML attributes can't have `null` values. The closest equivalent to `null` in HTML is absence of the HTML `value` attribute from the `<option>` element.
+* When selecting an `<option>` with no `value` attribute, the browser treats the value as the *text content* of that `<option>`'s element.
+
+The Blazor framework doesn't attempt to suppress the default behavior because it would involve:
+
+* Creating a chain of special-case workarounds in the framework.
+* Breaking changes to current framework behavior.
+
+The most plausible `null` equivalent in HTML is an *empty string* `value`. The Blazor framework handles `null` to empty string conversions for two-way binding to a `<select>`'s value.
 
 ## Unparsable values
 
 When a user provides an unparsable value to a databound element, the unparsable value is automatically reverted to its previous value when the bind event is triggered.
 
-Consider the following scenario:
+Consider the following component, where an `<input>` element is bound to an `int` type with an initial value of `123`.
 
-* An `<input>` element is bound to an `int` type with an initial value of `123`:
+`UnparsableValues.razor`:
 
-  ```razor
-  <input @bind="inputValue" />
+:::moniker range=">= aspnetcore-7.0"
 
-  @code {
-      private int inputValue = 123;
-  }
-  ```
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Pages/data-binding/UnparsableValues.razor" highlight="4,12":::
 
-* The user updates the value of the element to `123.45` in the page and changes the element focus.
+:::moniker-end
 
-In the preceding scenario, the element's value is reverted to `123`. When the value `123.45` is rejected in favor of the original value of `123`, the user understands that their value wasn't accepted.
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
 
-By default, binding applies to the element's `onchange` event (`@bind="{PROPERTY OR FIELD}"`). Use `@bind="{PROPERTY OR FIELD}" @bind:event={EVENT}` to trigger binding on a different event. For the `oninput` event (`@bind:event="oninput"`), the reversion occurs after any keystroke that introduces an unparsable value. When targeting the `oninput` event with an `int`-bound type, a user is prevented from typing a `.` character. A `.` character is immediately removed, so the user receives immediate feedback that only whole numbers are permitted. There are scenarios where reverting the value on the `oninput` event isn't ideal, such as when the user should be allowed to clear an unparsable `<input>` value. Alternatives include:
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Pages/data-binding/UnparsableValues.razor" highlight="4,12":::
 
-* Don't use the `oninput` event. Use the default `onchange` event (only specify `@bind="{PROPERTY OR FIELD}"`), where an invalid value isn't reverted until the element loses focus.
-* Bind to a nullable type, such as `int?` or `string` and provide custom logic to handle invalid entries.
-* Use a [form validation component](xref:blazor/forms-validation), such as <xref:Microsoft.AspNetCore.Components.Forms.InputNumber%601> or <xref:Microsoft.AspNetCore.Components.Forms.InputDate%601>. Form validation components have built-in support to manage invalid inputs. For more information, see <xref:blazor/forms-validation>. Form validation components:
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Pages/data-binding/UnparsableValues.razor" highlight="4,12":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Pages/data-binding/UnparsableValues.razor" highlight="4,12":::
+
+:::moniker-end
+
+By default, binding applies to the element's `onchange` event. If the user updates the value of the text box's entry to `123.45` and changes the focus, the element's value is reverted to `123` when `onchange` fires. When the value `123.45` is rejected in favor of the original value of `123`, the user understands that their value wasn't accepted.
+
+For the `oninput` event (`@bind:event="oninput"`), a value reversion occurs after any keystroke that introduces an unparsable value. When targeting the `oninput` event with an `int`-bound type, a user is prevented from typing a dot (`.`) character. A dot (`.`) character is immediately removed, so the user receives immediate feedback that only whole numbers are permitted. There are scenarios where reverting the value on the `oninput` event isn't ideal, such as when the user should be allowed to clear an unparsable `<input>` value. Alternatives include:
+
+* Don't use the `oninput` event. Use the default `onchange` event, where an invalid value isn't reverted until the element loses focus.
+* Bind to a nullable type, such as `int?` or `string` and either use `@bind:get`/`@bind:set` modifiers (described earlier in this article) or [bind to a property with custom `get` and `set` accessor logic](#binding-to-a-property-with-c-get-and-set-accessors) to handle invalid entries.
+* Use a [form validation component](xref:blazor/forms-and-input-components), such as <xref:Microsoft.AspNetCore.Components.Forms.InputNumber%601> or <xref:Microsoft.AspNetCore.Components.Forms.InputDate%601>. Form validation components provide built-in support to manage invalid inputs. Form validation components:
   * Permit the user to provide invalid input and receive validation errors on the associated <xref:Microsoft.AspNetCore.Components.Forms.EditContext>.
   * Display validation errors in the UI without interfering with the user entering additional webform data.
 
 ## Format strings
 
-Data binding works with <xref:System.DateTime> format strings using `@bind:format`. Other format expressions, such as currency or number formats, aren't available at this time.
+Data binding works with a single <xref:System.DateTime> format string using `@bind:format="{FORMAT STRING}"`, where the `{FORMAT STRING}` placeholder is the format string. Other format expressions, such as currency or number formats, aren't available at this time but might be added in a future release.
 
-```razor
-<input @bind="startDate" @bind:format="yyyy-MM-dd" />
+`DateBinding.razor`:
 
-@code {
-    private DateTime startDate = new DateTime(2020, 1, 1);
-}
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Pages/data-binding/DateBinding.razor" highlight="6":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Pages/data-binding/DateBinding.razor" highlight="6":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Pages/data-binding/DateBinding.razor" highlight="6":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Pages/data-binding/DateBinding.razor" highlight="6":::
+
+:::moniker-end
+
+In the preceding code, the `<input>` element's field type (`type` attribute) defaults to `text`.
+
+:::moniker range=">= aspnetcore-6.0"
+
+Nullable <xref:System.DateTime?displayProperty=fullName> and <xref:System.DateTimeOffset?displayProperty=fullName> are supported:
+
+```csharp
+private DateTime? date;
+private DateTimeOffset? dateOffset;
 ```
 
-In the preceding code, the `<input>` element's field type (`type`) defaults to `text`. `@bind:format` is supported for binding the following .NET types:
-
-* <xref:System.DateTime?displayProperty=fullName>
-* <xref:System.DateTime?displayProperty=fullName>?
-* <xref:System.DateTimeOffset?displayProperty=fullName>
-* <xref:System.DateTimeOffset?displayProperty=fullName>?
-
-The `@bind:format` attribute specifies the date format to apply to the `value` of the `<input>` element. The format is also used to parse the value when an `onchange` event occurs.
+:::moniker-end
 
 Specifying a format for the `date` field type isn't recommended because Blazor has built-in support to format dates. In spite of the recommendation, only use the `yyyy-MM-dd` date format for binding to function correctly if a format is supplied with the `date` field type:
 
@@ -125,291 +512,308 @@ Specifying a format for the `date` field type isn't recommended because Blazor h
 
 ## Binding with component parameters
 
-A common scenario is binding a property in a child component to a property in its parent. This scenario is called a *chained bind* because multiple levels of binding occur simultaneously.
+A common scenario is binding a property of a child component to a property in its parent component. This scenario is called a *chained bind* because multiple levels of binding occur simultaneously.
 
-[Component parameters](xref:blazor/components/index#component-parameters) permit binding properties of a parent component with `@bind-{PROPERTY}` syntax.
+[Component parameters](xref:blazor/components/index#component-parameters) permit binding properties of a parent component with `@bind-{PROPERTY}` syntax, where the `{PROPERTY}` placeholder is the property to bind.
 
-Chained binds can't be implemented with [`@bind`](xref:mvc/views/razor#bind) syntax in the child component. An event handler and value must be specified separately to support updating the property in the parent from the child component.
+You can't implement chained binds with [`@bind`](xref:mvc/views/razor#bind) syntax in the child component. An event handler and value must be specified separately to support updating the property in the parent from the child component.
 
-The parent component still leverages the [`@bind`](xref:mvc/views/razor#bind) syntax to set up the data-binding with the child component.
+The parent component still leverages the [`@bind`](xref:mvc/views/razor#bind) syntax to set up the databinding with the child component.
 
-The following `Child` component (`Shared/Child.razor`) has a `Year` component parameter and `YearChanged` callback:
+The following `ChildBind` component has a `Year` component parameter and an <xref:Microsoft.AspNetCore.Components.EventCallback%601>. By convention, the <xref:Microsoft.AspNetCore.Components.EventCallback%601> for the parameter must be named as the component parameter name with a "`Changed`" suffix. The naming syntax is `{PARAMETER NAME}Changed`, where the `{PARAMETER NAME}` placeholder is the parameter name. In the following example, the <xref:Microsoft.AspNetCore.Components.EventCallback%601> is named `YearChanged`.
+
+<xref:Microsoft.AspNetCore.Components.EventCallback.InvokeAsync%2A?displayProperty=nameWithType> invokes the delegate associated with the binding with the provided argument and dispatches an event notification for the changed property.
+
+`ChildBind.razor`:
+
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Shared/data-binding/ChildBind.razor" highlight="14-15,17-18,22":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Shared/data-binding/ChildBind.razor" highlight="14-15,17-18,22":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Shared/data-binding/ChildBind.razor" highlight="14-15,17-18,22":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Shared/data-binding/ChildBind.razor" highlight="14-15,17-18,22":::
+
+:::moniker-end
+
+For more information on events and <xref:Microsoft.AspNetCore.Components.EventCallback%601>, see the *EventCallback* section of the <xref:blazor/components/event-handling#eventcallback> article.
+
+In the following `Parent1` component, the `year` field is bound to the `Year` parameter of the child component. The `Year` parameter is bindable because it has a companion `YearChanged` event that matches the type of the `Year` parameter.
+
+`Parent1.razor`:
+
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Pages/data-binding/Parent1.razor" highlight="9":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Pages/data-binding/Parent1.razor" highlight="9":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Pages/data-binding/Parent1.razor" highlight="9":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Pages/data-binding/Parent1.razor" highlight="9":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-7.0"
+
+Component parameter binding can also trigger `@bind:after` events. In the following example, the `YearUpdated` method executes asynchronously after binding the `Year` component parameter.
 
 ```razor
-<div class="card bg-light mt-3" style="width:18rem ">
-    <div class="card-body">
-        <h3 class="card-title">Child Component</h3>
-        <p class="card-text">Child <code>Year</code>: @Year</p>
-    </div>
-</div>
-
-<button @onclick="UpdateYearFromChild">Update Year from Child</button>
+<ChildBind @bind-Year="year" @bind-Year:after="YearUpdated" />
 
 @code {
-    private Random r = new Random();
+    ...
 
-    [Parameter]
-    public int Year { get; set; }
-
-    [Parameter]
-    public EventCallback<int> YearChanged { get; set; }
-
-    private async Task UpdateYearFromChild()
+    private async Task YearUpdated()
     {
-        await YearChanged.InvokeAsync(r.Next(1950, 2021));
+        ... = await ...;
     }
 }
 ```
 
-The callback (<xref:Microsoft.AspNetCore.Components.EventCallback%601>) must be named as the component parameter name followed by the "`Changed`" suffix (`{PARAMETER NAME}Changed`). In the preceding example, the callback is named `YearChanged`. <xref:Microsoft.AspNetCore.Components.EventCallback.InvokeAsync%2A?displayProperty=nameWithType> invokes the delegate associated with the binding with the provided argument and dispatches an event notification for the changed property.
+:::moniker-end
 
-In the following `Parent` component (`Parent.razor`), the `year` field is bound to the `Year` parameter of the child component:
-
-```razor
-@page "/Parent"
-
-<h1>Parent Component</h1>
-
-<p>Parent <code>year</code>: @year</p>
-
-<button @onclick="UpdateYear">Update Parent <code>year</code></button>
-
-<Child @bind-Year="year" />
-
-@code {
-    private Random r = new Random();
-    private int year = 1979;
-
-    private void UpdateYear()
-    {
-        year = r.Next(1950, 2021);
-    }
-}
-```
-
-The `Year` parameter is bindable because it has a companion `YearChanged` event that matches the type of the `Year` parameter.
-
-By convention, a property can be bound to a corresponding event handler by including an `@bind-{PROPERTY}:event` attribute assigned to the handler. `<Child @bind-Year="year" />` is equivalent to writing:
+By convention, a property can be bound to a corresponding event handler by including an `@bind-{PROPERTY}:event` attribute assigned to the handler, where the `{PROPERTY}` placeholder is the property. `<ChildBind @bind-Year="year" />` is equivalent to writing:
 
 ```razor
-<Child @bind-Year="year" @bind-Year:event="YearChanged" />
+<ChildBind @bind-Year="year" @bind-Year:event="YearChanged" />
 ```
 
-In a more sophisticated and real-world example, the following `PasswordField` component (`PasswordField.razor`):
+In a more sophisticated and real-world example, the following `PasswordEntry` component:
 
 * Sets an `<input>` element's value to a `password` field.
 * Exposes changes of a `Password` property to a parent component with an [`EventCallback`](xref:blazor/components/event-handling#eventcallback) that passes in the current value of the child's `password` field as its argument.
 * Uses the `onclick` event to trigger the `ToggleShowPassword` method. For more information, see <xref:blazor/components/event-handling>.
 
+`PasswordEntry.razor`:
+
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Shared/data-binding/PasswordEntry.razor" highlight="7-10,13,23-24,26-27,36-39":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Shared/data-binding/PasswordEntry.razor" highlight="7-10,13,23-24,26-27,36-39":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Shared/data-binding/PasswordEntry.razor" highlight="7-10,13,23-24,26-27,36-39":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Shared/data-binding/PasswordEntry.razor" highlight="7-10,13,23-24,26-27,36-39":::
+
+:::moniker-end
+
+The `PasswordEntry` component is used in another component, such as the following `PasswordBinding` component example.
+
+`PasswordBinding.razor`:
+
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Pages/data-binding/PasswordBinding.razor" highlight="5":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Pages/data-binding/PasswordBinding.razor" highlight="5":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Pages/data-binding/PasswordBinding.razor" highlight="5":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Pages/data-binding/PasswordBinding.razor" highlight="5":::
+
+:::moniker-end
+
+When the `PasswordBinding` component is initially rendered, the `password` value of `Not set` is displayed in the UI. After initial rendering, the value of `password` reflects changes made to the `Password` component parameter value in the `PasswordEntry` component.
+
+> [!NOTE]
+> The preceding example binds the password one-way from the child `PasswordEntry` component to the parent `PasswordBinding` component. Two-way binding isn't a requirement in this scenario if the goal is for the app to have a shared password entry component for reuse around the app that merely passes the password to the parent. For an approach that permits two-way binding without [writing directly to the child component's parameter](xref:blazor/components/overwriting-parameters), see the `NestedChild` component example in the [Bind across more than two components](#bind-across-more-than-two-components) section of this article.
+
+Perform checks or trap errors in the handler. The following revised `PasswordEntry` component provides immediate feedback to the user if a space is used in the password's value.
+
+`PasswordEntry.razor`:
+
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Shared/data-binding/PasswordEntry2.razor" highlight="35-46":::
+
+In the following example, the `PasswordUpdated` method executes asynchronously after binding the `Password` component parameter:
+
 ```razor
-<h1>Provide your password</h1>
-
-Password:
-
-<input @oninput="OnPasswordChanged" 
-       required 
-       type="@(showPassword ? "text" : "password")" 
-       value="@password" />
-
-<button class="btn btn-primary" @onclick="ToggleShowPassword">
-    Show password
-</button>
-
-@code {
-    private bool showPassword;
-    private string password;
-
-    [Parameter]
-    public string Password { get; set; }
-
-    [Parameter]
-    public EventCallback<string> PasswordChanged { get; set; }
-
-    private async Task OnPasswordChanged(ChangeEventArgs e)
-    {
-        password = e.Value.ToString();
-
-        await PasswordChanged.InvokeAsync(password);
-    }
-
-    private void ToggleShowPassword()
-    {
-        showPassword = !showPassword;
-    }
-}
+<PasswordEntry @bind-Password="password" @bind-Password:after="PasswordUpdated" />
 ```
 
-The `PasswordField` component is used in another component:
+:::moniker-end
 
-```razor
-@page "/Parent"
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
 
-<h1>Parent Component</h1>
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Shared/data-binding/PasswordEntry2.razor" highlight="35-46":::
 
-<PasswordField @bind-Password="password" />
+:::moniker-end
 
-@code {
-    private string password;
-}
-```
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
 
-Perform checks or trap errors in the method that invokes the binding's delegate. The following example provides immediate feedback to the user if a space is used in the password's value:
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Shared/data-binding/PasswordEntry2.razor" highlight="35-46":::
 
-```razor
-<h1>Child Component</h1>
+:::moniker-end
 
-Password: 
+:::moniker range="< aspnetcore-5.0"
 
-<input @oninput="OnPasswordChanged" 
-       required 
-       type="@(showPassword ? "text" : "password")" 
-       value="@password" />
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Shared/data-binding/PasswordEntry2.razor" highlight="35-46":::
 
-<button class="btn btn-primary" @onclick="ToggleShowPassword">
-    Show password
-</button>
-
-<span class="text-danger">@validationMessage</span>
-
-@code {
-    private bool showPassword;
-    private string password;
-    private string validationMessage;
-
-    [Parameter]
-    public string Password { get; set; }
-
-    [Parameter]
-    public EventCallback<string> PasswordChanged { get; set; }
-
-    private Task OnPasswordChanged(ChangeEventArgs e)
-    {
-        password = e.Value.ToString();
-
-        if (password.Contains(' '))
-        {
-            validationMessage = "Spaces not allowed!";
-
-            return Task.CompletedTask;
-        }
-        else
-        {
-            validationMessage = string.Empty;
-
-            return PasswordChanged.InvokeAsync(password);
-        }
-    }
-
-    private void ToggleShowPassword()
-    {
-        showPassword = !showPassword;
-    }
-}
-```
-
-For more information on <xref:Microsoft.AspNetCore.Components.EventCallback%601>, see <xref:blazor/components/event-handling#eventcallback>.
+:::moniker-end
 
 ## Bind across more than two components
 
-You can bind through any number of nested components, but you must respect the one-way flow of data:
+You can bind parameters through any number of nested components, but you must respect the one-way flow of data:
 
 * Change notifications *flow up the hierarchy*.
 * New parameter values *flow down the hierarchy*.
 
-A common and recommended approach is to only store the underlying data in the parent component to avoid any confusion about what state must be updated.
+A common and recommended approach is to only store the underlying data in the parent component to avoid any confusion about what state must be updated, as shown in the following example.
 
-The following components demonstrate the preceding concepts:
+`Parent2.razor`:
 
-`ParentComponent.razor`:
+:::moniker range=">= aspnetcore-7.0"
 
-```razor
-<h1>Parent Component</h1>
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Pages/data-binding/Parent2.razor":::
 
-<p>Parent Message: <b>@parentMessage</b></p>
+:::moniker-end
 
-<p>
-    <button @onclick="ChangeValue">Change from Parent</button>
-</p>
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
 
-<ChildComponent @bind-ChildMessage="parentMessage" />
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Pages/data-binding/Parent2.razor":::
 
-@code {
-    private string parentMessage = "Initial value set in Parent";
+:::moniker-end
 
-    private void ChangeValue()
-    {
-        parentMessage = $"Set in Parent {DateTime.Now}";
-    }
-}
-```
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
 
-`ChildComponent.razor`:
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Pages/data-binding/Parent2.razor":::
 
-```razor
-<div class="border rounded m-1 p-1">
-    <h2>Child Component</h2>
+:::moniker-end
 
-    <p>Child Message: <b>@ChildMessage</b></p>
+:::moniker range="< aspnetcore-5.0"
 
-    <p>
-        <button @onclick="ChangeValue">Change from Child</button>
-    </p>
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Pages/data-binding/Parent2.razor":::
 
-    <GrandchildComponent @bind-GrandchildMessage="BoundValue" />
-</div>
+:::moniker-end
 
-@code {
-    [Parameter]
-    public string ChildMessage { get; set; }
+:::moniker range=">= aspnetcore-7.0"
 
-    [Parameter]
-    public EventCallback<string> ChildMessageChanged { get; set; }
+In the following `NestedChild` component, the `NestedGrandchild` component:
 
-    private string BoundValue
-    {
-        get => ChildMessage;
-        set => ChildMessageChanged.InvokeAsync(value);
-    }
+* Assigns the value of `ChildMessage` to `GrandchildMessage` with `@bind:get` syntax.
+* Updates `GrandchildMessage` when `ChildMessageChanged` executes with `@bind:set` syntax.
 
-    private async Task ChangeValue()
-    {
-        await ChildMessageChanged.InvokeAsync(
-            $"Set in Child {DateTime.Now}");
-    }
-}
-```
+:::moniker-end
 
-`GrandchildComponent.razor`:
+`NestedChild.razor`:
 
-```razor
-<div class="border rounded m-1 p-1">
-    <h3>Grandchild Component</h3>
+:::moniker range=">= aspnetcore-7.0"
 
-    <p>Grandchild Message: <b>@GrandchildMessage</b></p>
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Shared/data-binding/NestedChild.razor":::
 
-    <p>
-        <button @onclick="ChangeValue">Change from Grandchild</button>
-    </p>
-</div>
+:::moniker-end
 
-@code {
-    [Parameter]
-    public string GrandchildMessage { get; set; }
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
 
-    [Parameter]
-    public EventCallback<string> GrandchildMessageChanged { get; set; }
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Shared/data-binding/NestedChild.razor":::
 
-    private async Task ChangeValue()
-    {
-        await GrandchildMessageChanged.InvokeAsync(
-            $"Set in Grandchild {DateTime.Now}");
-    }
-}
-```
+:::moniker-end
 
-For an alternative approach suited to sharing data in-memory across components that aren't necessarily nested, see the *In-memory state container service* section of the <xref:blazor/state-management> article.
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Shared/data-binding/NestedChild.razor":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Shared/data-binding/NestedChild.razor":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-7.0"
+
+> [!WARNING]
+> Generally, avoid creating components that write directly to their own component parameters. The preceding `NestedChild` component makes use of a `BoundValue` property instead of writing directly to its `ChildMessage` parameter. For more information, see <xref:blazor/components/overwriting-parameters>.
+
+:::moniker-end
+
+`NestedGrandchild.razor`:
+
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Shared/data-binding/NestedGrandchild.razor":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Shared/data-binding/NestedGrandchild.razor":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Shared/data-binding/NestedGrandchild.razor":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Shared/data-binding/NestedGrandchild.razor":::
+
+:::moniker-end
+
+For an alternative approach suited to sharing data in memory and across components that aren't necessarily nested, see <xref:blazor/state-management>.
 
 ## Additional resources
 
-* [Binding to radio buttons in a form](xref:blazor/forms-validation#radio-buttons)
-* [Binding `<select>` element options to C# object `null` values in a form](xref:blazor/forms-validation#binding-select-element-options-to-c-object-null-values)
+* [Parameter change detection and additional guidance on Razor component rendering](xref:blazor/components/rendering)
+* <xref:blazor/forms-and-input-components>
+* [Binding to radio buttons in a form](xref:blazor/forms-and-input-components#radio-buttons)
+* [Binding `InputSelect` options to C# object `null` values](xref:blazor/forms-and-input-components#binding-inputselect-options-to-c-object-null-values)
+* [ASP.NET Core Blazor event handling: `EventCallback` section](xref:blazor/components/event-handling#eventcallback)
+* [Blazor samples GitHub repository (`dotnet/blazor-samples`)](https://github.com/dotnet/blazor-samples)

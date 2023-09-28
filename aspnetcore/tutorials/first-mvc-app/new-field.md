@@ -1,16 +1,18 @@
 ---
 title: Part 8, add a new field to an ASP.NET Core MVC app
-author: rick-anderson
+author: wadepickett
 description: Part 8 of tutorial series on ASP.NET Core MVC.
-ms.author: riande
-ms.custom: mvc
-ms.date: 12/13/2018
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+monikerRange: '>= aspnetcore-3.1'
+ms.author: wpickett
+ms.date: 08/14/2023
+ms.custom: engagement-fy23
 uid: tutorials/first-mvc-app/new-field
 ---
 # Part 8, add a new field to an ASP.NET Core MVC app
 
 By [Rick Anderson](https://twitter.com/RickAndMSFT)
+
+:::moniker range=">= aspnetcore-8.0"
 
 In this section [Entity Framework](/ef/core/get-started/aspnetcore/new-db) Code First Migrations is used to:
 
@@ -24,9 +26,9 @@ When EF Code First is used to automatically create a database, Code First:
 
 ## Add a Rating Property to the Movie Model
 
-Add a `Rating` property to *Models/Movie.cs*:
+Add a `Rating` property to `Models/Movie.cs`:
 
-[!code-csharp[](~/tutorials/first-mvc-app/start-mvc/sample/MvcMovie22/Models/MovieDateRating.cs?name=snippet)]
+[!code-csharp[](~/tutorials/first-mvc-app/start-mvc/sample/mvcmovie80/Models/Movie.cs?name=snippet_AddRating&highlight=19)]
 
 Build the app
 
@@ -44,37 +46,27 @@ dotnet build
 
 Command ⌘ + B
 
-------
+---
 
-Because you've added a new field to the `Movie` class, you need to update the property binding list so this new property will be included. In *MoviesController.cs*, update the `[Bind]` attribute for both the `Create` and `Edit` action methods to include the `Rating` property:
+Because you've added a new field to the `Movie` class, you need to update the property binding list so this new property will be included. In `MoviesController.cs`, update the `[Bind]` attribute for both the `Create` and `Edit` action methods to include the `Rating` property:
 
 ```csharp
 [Bind("Id,Title,ReleaseDate,Genre,Price,Rating")]
-   ```
+```
 
 Update the view templates in order to display, create, and edit the new `Rating` property in the browser view.
 
-Edit the */Views/Movies/Index.cshtml* file and add a `Rating` field:
+Edit the `/Views/Movies/Index.cshtml` file and add a `Rating` field:
 
-::: moniker range=">= aspnetcore-3.0 < aspnetcore-5.0"
+[!code-cshtml[](~/tutorials/first-mvc-app/start-mvc/sample/MvcMovie80/Views/Movies/IndexGenreRating.cshtml?highlight=16-18,38-40&range=24-72)]
 
-[!code-cshtml[](~/tutorials/first-mvc-app/start-mvc/sample/MvcMovie3/Views/Movies/IndexGenreRating.cshtml?highlight=16,38&range=24-63)]
-
-::: moniker-end
-
-::: moniker range=">= aspnetcore-5.0"
-
-[!code-cshtml[](~/tutorials/first-mvc-app/start-mvc/sample/MvcMovie5/Views/Movies/IndexGenreRating.cshtml?highlight=16,38&range=24-63)]
-
-::: moniker-end
-
-Update the */Views/Movies/Create.cshtml* with a `Rating` field.
+Update the `/Views/Movies/Create.cshtml` with a `Rating` field.
 
 # [Visual Studio / Visual Studio for Mac](#tab/visual-studio+visual-studio-mac)
 
 You can copy/paste the previous "form group" and let intelliSense help you update the fields. IntelliSense works with [Tag Helpers](xref:mvc/views/tag-helpers/intro).
 
-![The developer has typed the letter R for the attribute value of asp-for in the second label element of the view. An Intellisense contextual menu has appeared showing the available fields, including Rating, which is highlighted in the list automatically. When the developer clicks the field or presses Enter on the keyboard, the value will be set to Rating.](new-field/_static/cr.png)
+![The developer has typed the letter R for the attribute value of asp-for in the second label element of the view. An Intellisense contextual menu has appeared showing the available fields, including Rating, which is highlighted in the list automatically. When the developer clicks the field or presses Enter on the keyboard, the value will be set to Rating.](~/tutorials/first-mvc-app/new-field/_static/cr.png)
 
 # [Visual Studio Code](#tab/visual-studio-code)
 
@@ -86,7 +78,7 @@ Update the remaining templates.
 
 Update the `SeedData` class so that it provides a value for the new column. A sample change is shown below, but you'll want to make this change for each `new Movie`.
 
-[!code-csharp[](start-mvc/sample/MvcMovie/Models/SeedDataRating.cs?name=snippet1&highlight=6)]
+[!code-csharp[](~/tutorials/first-mvc-app/start-mvc/sample/MvcMovie80/Models/SeedDataRating.cs?name=snippet_SeedRating&highlight=6)]
 
 The app won't work until the DB is updated to include the new field. If it's run now, the following `SqlException` is thrown:
 
@@ -108,7 +100,7 @@ For this tutorial, Code First Migrations is used.
 
 From the **Tools** menu, select **NuGet Package Manager > Package Manager Console**.
 
-  ![PMC menu](adding-model/_static/pmc.png)
+  ![PMC menu](~/tutorials/first-mvc-app/adding-model/_static/pmc.png)
 
 In the PMC, enter the following commands:
 
@@ -127,16 +119,17 @@ If all the records in the DB are deleted, the initialize method will seed the DB
 
 [!INCLUDE[](~/includes/RP-mvc-shared/sqlite-warn.md)]
 
-Delete the database and the previous migration and use migrations to re-create the database:
+Delete the Migrations folder and the database file, and then run the following .NET CLI commands:
 
 ```dotnetcli
-dotnet ef migrations remove
-dotnet ef database drop
 dotnet ef migrations add InitialCreate
+```
+
+```dotnetcli
 dotnet ef database update
 ```
 
-`dotnet ef migrations remove` removes the last migration. If there are more than one migration, delete the Migrations folder.
+For more information, see [Resetting all migrations](/ef/core/managing-schemas/migrations/managing?tabs=dotnet-core-cli#resetting-all-migrations).
 
 ---
 <!-- End of VS tabs -->
@@ -144,5 +137,15 @@ dotnet ef database update
 Run the app and verify you can create, edit, and display movies with a `Rating` field.
 
 > [!div class="step-by-step"]
-> [Previous](search.md)
-> [Next](validation.md)
+> [Previous](~/tutorials/first-mvc-app/search.md)
+> [Next](~/tutorials/first-mvc-app/validation.md)
+
+:::moniker-end
+
+[!INCLUDE[](~/tutorials/first-mvc-app/new-field/includes/new-field7.md)]
+
+[!INCLUDE[](~/tutorials/first-mvc-app/new-field/includes/new-field6.md)]
+
+[!INCLUDE[](~/tutorials/first-mvc-app/new-field/includes/new-field5.md)]
+
+[!INCLUDE[](~/tutorials/first-mvc-app/new-field/includes/new-field3.md)]

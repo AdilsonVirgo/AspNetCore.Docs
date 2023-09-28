@@ -1,18 +1,15 @@
 ---
 title: Manage Protobuf references with dotnet-grpc
-author: juntaoluo
+author: jamesnk
 description: Learn about adding, updating, removing, and listing Protobuf references with the dotnet-grpc global tool.
 monikerRange: '>= aspnetcore-3.0'
-ms.author: johluo
+ms.author: jamesnk
 ms.date: 10/17/2019
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: grpc/dotnet-grpc
 ---
 # Manage Protobuf references with dotnet-grpc
 
-By [John Luo](https://github.com/juntaoluo)
-
-`dotnet-grpc` is a .NET Core Global Tool for managing [Protobuf (*.proto*)](xref:grpc/basics#proto-file) references within a .NET gRPC project. The tool can be used to add, refresh, remove, and list Protobuf references.
+`dotnet-grpc` is a .NET Core Global Tool for managing [Protobuf (`.proto`)](xref:grpc/basics#proto-file) references within a .NET gRPC project. The tool can be used to add, refresh, remove, and list Protobuf references.
 
 ## Installation
 
@@ -22,9 +19,11 @@ To install the `dotnet-grpc` [.NET Core Global Tool](/dotnet/core/tools/global-t
 dotnet tool install -g dotnet-grpc
 ```
 
+[!INCLUDE[](~/includes/dotnet-tool-install-arch-options.md)]
+
 ## Add references
 
-`dotnet-grpc` can be used to add Protobuf references as `<Protobuf />` items to the *.csproj* file:
+`dotnet-grpc` can be used to add Protobuf references as `<Protobuf />` items to the `.csproj` file:
 
 ```xml
 <Protobuf Include="Protos\greet.proto" GrpcServices="Server" />
@@ -50,7 +49,7 @@ If any files are outside the project directory, a `Link` element is added to dis
 ### Usage
 
 ```dotnetcli
-dotnet grpc add-file [options] <files>...
+dotnet-grpc add-file [options] <files>...
 ```
 
 #### Arguments
@@ -96,10 +95,10 @@ dotnet-grpc add-url [options] <url>
 
 ## Remove
 
-The `remove` command is used to remove Protobuf references from the *.csproj* file. The command accepts path arguments and source URLs as arguments. The tool:
+The `remove` command is used to remove Protobuf references from the `.csproj` file. The command accepts path arguments and source URLs as arguments. The tool:
 
 * Only removes the Protobuf reference.
-* Does not delete the *.proto* file, even if it was originally downloaded from a remote URL.
+* Does not delete the `.proto` file, even if it was originally downloaded from a remote URL.
 
 ### Usage
 

@@ -1,26 +1,25 @@
 ---
-title: Common errors reference for Azure App Service and IIS with ASP.NET Core
+title: Common error troubleshooting for Azure App Service and IIS with ASP.NET Core
 author: rick-anderson
-description: Obtain troubleshooting advice for common errors when hosting ASP.NET Core apps on Azure Apps Service and IIS.
+description: Provides troubleshooting advice for the most common errors when hosting ASP.NET Core apps on Azure Apps Service and IIS.
 monikerRange: '>= aspnetcore-2.1'
 ms.author: riande
 ms.custom: mvc
-ms.date: 02/07/2020
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 3/07/2022
 uid: host-and-deploy/azure-iis-errors-reference
 ---
 
-# Common errors reference for Azure App Service and IIS with ASP.NET Core
+# Common error troubleshooting for Azure App Service and IIS with ASP.NET Core
 
-::: moniker range=">= aspnetcore-2.2"
+:::moniker range=">= aspnetcore-2.2"
 
-This topic describes common errors and provides troubleshooting advice for specific errors when hosting ASP.NET Core apps on Azure Apps Service and IIS.
+This topic describes the most common errors and provides troubleshooting advice when hosting ASP.NET Core apps on Azure Apps Service and IIS.
 
-For general troubleshooting guidance, see <xref:test/troubleshoot-azure-iis>.
+See <xref:test/troubleshoot-azure-iis> information on common app startup errors and instructions on how to diagnose errors.
 
 Collect the following information:
 
-* Browser behavior (status code and error message)
+* Browser behavior such as status code and error message.
 * Application Event Log entries
   * Azure App Service: See <xref:test/troubleshoot-azure-iis>.
   * IIS
@@ -28,7 +27,7 @@ Collect the following information:
     1. After the **Event Viewer** opens, expand **Windows Logs** > **Application** in the sidebar.
 * ASP.NET Core Module stdout and debug log entries
   * Azure App Service: See <xref:test/troubleshoot-azure-iis>.
-  * IIS: Follow the instructions in the [Log creation and redirection](xref:host-and-deploy/aspnet-core-module#log-creation-and-redirection) and [Enhanced diagnostic logs](xref:host-and-deploy/aspnet-core-module#enhanced-diagnostic-logs) sections of the ASP.NET Core Module topic.
+  * IIS: Follow the instructions in the [Log creation and redirection](xref:host-and-deploy/aspnet-core-module#log-creation-and-redirection) and [Enhanced diagnostic logs](xref:host-and-deploy/iis/logging-and-diagnostics#enhanced-diagnostic-logs) sections of the ASP.NET Core Module topic.
 
 Compare error information to the following common errors. If a match is found, follow the troubleshooting advice.
 
@@ -199,7 +198,7 @@ Troubleshooting:
 
   For more information, see [Install the .NET Core Hosting Bundle](xref:host-and-deploy/iis/index#install-the-net-core-hosting-bundle).
 
-  If a specific runtime is required, download the runtime from the [.NET Download Archives](https://dotnet.microsoft.com/download/archives) and install it on the system. Complete the installation by restarting the system or restarting IIS by executing **net stop was /y** followed by **net start w3svc** from a command prompt.
+  If a specific runtime is required, download the runtime from the [.NET Downloads](https://dotnet.microsoft.com/download/dotnet) page and install it on the system. Complete the installation by restarting the system or restarting IIS by executing **net stop was /y** followed by **net start w3svc** from a command prompt.
 
 ## Incorrect arguments of \<aspNetCore> element
 
@@ -298,9 +297,9 @@ For more information, see the following topics:
 * <xref:test/troubleshoot-azure-iis>
 * <xref:test/troubleshoot>
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-2.2"
+:::moniker range="< aspnetcore-2.2"
 
 This topic describes common errors and provides troubleshooting advice for specific errors when hosting ASP.NET Core apps on Azure Apps Service and IIS.
 
@@ -316,7 +315,7 @@ Collect the following information:
     1. After the **Event Viewer** opens, expand **Windows Logs** > **Application** in the sidebar.
 * ASP.NET Core Module stdout and debug log entries
   * Azure App Service: See <xref:test/troubleshoot-azure-iis>.
-  * IIS: Follow the instructions in the [Log creation and redirection](xref:host-and-deploy/aspnet-core-module#log-creation-and-redirection) and [Enhanced diagnostic logs](xref:host-and-deploy/aspnet-core-module#enhanced-diagnostic-logs) sections of the ASP.NET Core Module topic.
+  * IIS: Follow the instructions in the [Log creation and redirection](xref:host-and-deploy/aspnet-core-module#log-creation-and-redirection) and [Enhanced diagnostic logs](xref:host-and-deploy/iis/logging-and-diagnostics#enhanced-diagnostic-logs) sections of the ASP.NET Core Module topic.
 
 Compare error information to the following common errors. If a match is found, follow the troubleshooting advice.
 
@@ -475,7 +474,7 @@ Troubleshooting:
 
   For more information, see [Install the .NET Core Hosting Bundle](xref:host-and-deploy/iis/index#install-the-net-core-hosting-bundle).
 
-  If a specific runtime is required, download the runtime from the [.NET Download Archives](https://dotnet.microsoft.com/download/archives) and install it on the system. Complete the installation by restarting the system or restarting IIS by executing **net stop was /y** followed by **net start w3svc** from a command prompt.
+  If a specific runtime is required, download the runtime from the [.NET Downloads](https://dotnet.microsoft.com/download/dotnet) page and install it on the system. Complete the installation by restarting the system or restarting IIS by executing **net stop was /y** followed by **net start w3svc** from a command prompt.
 
 ## Incorrect arguments of \<aspNetCore> element
 
@@ -550,4 +549,4 @@ For more information, see the following topics:
 * <xref:test/troubleshoot-azure-iis>
 * <xref:test/troubleshoot>
 
-::: moniker-end
+:::moniker-end

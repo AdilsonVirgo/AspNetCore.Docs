@@ -1,12 +1,11 @@
 ---
 title: "Tutorial: Create a complex data model - ASP.NET MVC with EF Core"
 description: "In this tutorial, add more entities and relationships and customize the data model by specifying formatting, validation, and mapping rules."
-author: rick-anderson
+author: tdykstra
 ms.author: riande
 ms.custom: mvc
 ms.date: 03/27/2019
 ms.topic: tutorial
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: data/ef-mvc/complex-data-model
 ---
 
@@ -46,7 +45,7 @@ In this section you'll see how to customize the data model by using attributes t
 
 For student enrollment dates, all of the web pages currently display the time along with the date, although all you care about for this field is the date. By using data annotation attributes, you can make one code change that will fix the display format in every view that shows the data. To see an example of how to do that, you'll add an attribute to the `EnrollmentDate` property in the `Student` class.
 
-In *Models/Student.cs*, add a `using` statement for the `System.ComponentModel.DataAnnotations` namespace and add `DataType` and `DisplayFormat` attributes to the `EnrollmentDate` property, as shown in the following example:
+In `Models/Student.cs`, add a `using` statement for the `System.ComponentModel.DataAnnotations` namespace and add `DataType` and `DisplayFormat` attributes to the `EnrollmentDate` property, as shown in the following example:
 
 [!code-csharp[](intro/samples/cu/Models/Student.cs?name=snippet_DataType&highlight=3,12-13)]
 
@@ -102,7 +101,7 @@ dotnet ef migrations add MaxLengthOnNames
 dotnet ef database update
 ```
 
-The `migrations add` command warns that data loss may occur, because the change makes the maximum length shorter for two columns.  Migrations creates a file named *\<timeStamp>_MaxLengthOnNames.cs*. This file contains code in the `Up` method that will update the database to match the current data model. The `database update` command ran that code.
+The `migrations add` command warns that data loss may occur, because the change makes the maximum length shorter for two columns.  Migrations creates a file named `<timeStamp>_MaxLengthOnNames.cs`. This file contains code in the `Up` method that will update the database to match the current data model. The `database update` command ran that code.
 
 The timestamp prefixed to the migrations file name is used by Entity Framework to order the migrations. You can create multiple migrations before running the update-database command, and then all of the migrations are applied in the order in which they were created.
 
@@ -114,7 +113,7 @@ You can also use attributes to control how your classes and properties are mappe
 
 The `Column` attribute specifies that when the database is created, the column of the `Student` table that maps to the `FirstMidName` property will be named `FirstName`. In other words, when your code refers to `Student.FirstMidName`, the data will come from or be updated in the `FirstName` column of the `Student` table. If you don't specify column names, they're given the same name as the property name.
 
-In the *Student.cs* file, add a `using` statement for `System.ComponentModel.DataAnnotations.Schema` and add the column name attribute to the `FirstMidName` property, as shown in the following highlighted code:
+In the `Student.cs` file, add a `using` statement for `System.ComponentModel.DataAnnotations.Schema` and add the column name attribute to the `FirstMidName` property, as shown in the following highlighted code:
 
 [!code-csharp[](intro/samples/cu/Models/Student.cs?name=snippet_Column&highlight=4,14)]
 
@@ -143,7 +142,7 @@ Before you applied the first two migrations, the name columns were of type nvarc
 
 ![Student entity](complex-data-model/_static/student-entity.png)
 
-In *Models/Student.cs*, replace the code you added earlier with the following code. The changes are highlighted.
+In `Models/Student.cs`, replace the code you added earlier with the following code. The changes are highlighted.
 
 [!code-csharp[](intro/samples/cu/Models/Student.cs?name=snippet_BeforeInheritance&highlight=11,13,15,18,22,24-31)]
 
@@ -172,7 +171,7 @@ The `Display` attribute specifies that the caption for the text boxes should be 
 
 ![Instructor entity](complex-data-model/_static/instructor-entity.png)
 
-Create *Models/Instructor.cs*, replacing the template code with the following code:
+Create `Models/Instructor.cs`, replacing the template code with the following code:
 
 [!code-csharp[](intro/samples/cu/Models/Instructor.cs?name=snippet_BeforeInheritance)]
 
@@ -208,13 +207,13 @@ public OfficeAssignment OfficeAssignment { get; set; }
 
 ![OfficeAssignment entity](complex-data-model/_static/officeassignment-entity.png)
 
-Create *Models/OfficeAssignment.cs* with the following code:
+Create `Models/OfficeAssignment.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu/Models/OfficeAssignment.cs)]
 
 ### The Key attribute
 
-There's a one-to-zero-or-one relationship  between the Instructor and the OfficeAssignment entities. An office assignment only exists in relation to the instructor it's assigned to, and therefore its primary key is also its foreign key to the Instructor entity. But the Entity Framework can't automatically recognize InstructorID as the primary key of this entity because its name doesn't follow the ID or classnameID naming convention. Therefore, the `Key` attribute is used to identify it as the key:
+There's a one-to-zero-or-one relationship  between the `Instructor` and the `OfficeAssignment` entities. An office assignment only exists in relation to the instructor it's assigned to, and therefore its primary key is also its foreign key to the `Instructor` entity. But the Entity Framework can't automatically recognize `InstructorID` as the primary key of this entity because its name doesn't follow the `ID` or `classnameID` naming convention. Therefore, the `Key` attribute is used to identify it as the key:
 
 ```csharp
 [Key]
@@ -235,13 +234,13 @@ You could put a `[Required]` attribute on the Instructor navigation property to 
 
 ![Course entity](complex-data-model/_static/course-entity.png)
 
-In *Models/Course.cs*, replace the code you added earlier with the following code. The changes are highlighted.
+In `Models/Course.cs`, replace the code you added earlier with the following code. The changes are highlighted.
 
 [!code-csharp[](intro/samples/cu/Models/Course.cs?name=snippet_Final&highlight=2,10,13,16,19,21,23)]
 
 The course entity has a foreign key property `DepartmentID` which points to the related Department entity and it has a `Department` navigation property.
 
-The Entity Framework doesn't require you to add a foreign key property to your data model when you have a navigation property for a related entity.  EF automatically creates foreign keys in the database wherever they're needed and creates [shadow properties](/ef/core/modeling/shadow-properties) for them. But having the foreign key in the data model can make updates simpler and more efficient. For example, when you fetch a course entity to edit, the  Department entity is null if you don't load it, so when you update the course entity, you would have to first fetch the Department entity. When the foreign key property `DepartmentID` is included in the data model, you don't need to fetch the Department entity before you update.
+The Entity Framework doesn't require you to add a foreign key property to your data model when you have a navigation property for a related entity.  EF automatically creates foreign keys in the database wherever they're needed and creates [shadow properties](/ef/core/modeling/shadow-properties) for them. But having the foreign key in the data model can make updates simpler and more efficient. For example, when you fetch a `Course` entity to edit, the  `Department` entity is null if you don't load it, so when you update the `Course` entity, you would have to first fetch the `Department` entity. When the foreign key property `DepartmentID` is included in the data model, you don't need to fetch the `Department` entity before you update.
 
 ### The DatabaseGenerated attribute
 
@@ -253,13 +252,13 @@ The `DatabaseGenerated` attribute with the `None` parameter on the `CourseID` pr
 public int CourseID { get; set; }
 ```
 
-By default, Entity Framework assumes that primary key values are generated by the database. That's what you want in most scenarios. However, for Course entities, you'll use a user-specified course number such as a 1000 series for one department, a 2000 series for another department, and so on.
+By default, Entity Framework assumes that primary key values are generated by the database. That's what you want in most scenarios. However, for `Course` entities, you'll use a user-specified course number such as a 1000 series for one department, a 2000 series for another department, and so on.
 
 The `DatabaseGenerated` attribute can also be used to generate default values, as in the case of database columns used to record the date a row was created or updated.  For more information, see [Generated Properties](/ef/core/modeling/generated-properties).
 
 ### Foreign key and navigation properties
 
-The foreign key properties and navigation properties in the Course entity reflect the following relationships:
+The foreign key properties and navigation properties in the `Course` entity reflect the following relationships:
 
 A course is assigned to one department, so there's a `DepartmentID` foreign key and a `Department` navigation property for the reasons mentioned above.
 
@@ -284,13 +283,13 @@ public ICollection<CourseAssignment> CourseAssignments { get; set; }
 
 ![Department entity](complex-data-model/_static/department-entity.png)
 
-Create *Models/Department.cs* with the following code:
+Create `Models/Department.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu/Models/Department.cs?name=snippet_Begin)]
 
 ### The Column attribute
 
-Earlier you used the `Column` attribute to change column name mapping. In the code for the Department entity, the `Column` attribute is being used to change SQL data type mapping so that the column will be defined using the SQL Server money type in the database:
+Earlier you used the `Column` attribute to change column name mapping. In the code for the `Department` entity, the `Column` attribute is being used to change SQL data type mapping so that the column will be defined using the SQL Server `money` type in the database:
 
 ```csharp
 [Column(TypeName="money")]
@@ -317,7 +316,7 @@ public ICollection<Course> Courses { get; set; }
 ```
 
 > [!NOTE]
-> By convention, the Entity Framework enables cascade delete for non-nullable foreign keys and for many-to-many relationships. This can result in circular cascade delete rules, which will cause an exception when you try to add a migration. For example, if you didn't define the Department.InstructorID property as nullable, EF would configure a cascade delete rule to delete the department when you delete the instructor, which isn't what you want to have happen. If your business rules required the `InstructorID` property to be non-nullable, you would have to use the following fluent API statement to disable cascade delete on the relationship:
+> By convention, the Entity Framework enables cascade delete for non-nullable foreign keys and for many-to-many relationships. This can result in circular cascade delete rules, which will cause an exception when you try to add a migration. For example, if you didn't define the `Department.InstructorID` property as nullable, EF would configure a cascade delete rule to delete the department when you delete the instructor, which isn't what you want to have happen. If your business rules required the `InstructorID` property to be non-nullable, you would have to use the following fluent API statement to disable cascade delete on the relationship:
 >
 > ```csharp
 > modelBuilder.Entity<Department>()
@@ -330,7 +329,7 @@ public ICollection<Course> Courses { get; set; }
 
 ![Enrollment entity](complex-data-model/_static/enrollment-entity.png)
 
-In *Models/Enrollment.cs*, replace the code you added earlier with the following code:
+In `Models/Enrollment.cs`, replace the code you added earlier with the following code:
 
 [!code-csharp[](intro/samples/cu/Models/Enrollment.cs?name=snippet_Final&highlight=1-2,16)]
 
@@ -354,7 +353,7 @@ public Student Student { get; set; }
 
 ## Many-to-Many relationships
 
-There's a many-to-many relationship between the Student and Course entities, and the Enrollment entity functions as a many-to-many join table *with payload* in the database. "With payload" means that the Enrollment table contains additional data besides foreign keys for the joined tables (in this case, a primary key and a Grade property).
+There's a many-to-many relationship between the `Student` and `Course` entities, and the `Enrollment` entity functions as a many-to-many join table *with payload* in the database. "With payload" means that the `Enrollment` table contains additional data besides foreign keys for the joined tables (in this case, a primary key and a `Grade` property).
 
 The following illustration shows what these relationships look like in an entity diagram. (This diagram was generated using the Entity Framework Power Tools for EF 6.x; creating the diagram isn't part of the tutorial, it's just being used here as an illustration.)
 
@@ -362,15 +361,15 @@ The following illustration shows what these relationships look like in an entity
 
 Each relationship line has a 1 at one end and an asterisk (*) at the other, indicating a one-to-many relationship.
 
-If the Enrollment table didn't include grade information, it would only need to contain the two foreign keys CourseID and StudentID. In that case, it would be a many-to-many join table without payload (or a pure join table) in the database. The Instructor and Course entities have that kind of many-to-many relationship, and your next step is to create an entity class to function as a join table without payload.
+If the `Enrollment` table didn't include grade information, it would only need to contain the two foreign keys `CourseID` and `StudentID`. In that case, it would be a many-to-many join table without payload (or a pure join table) in the database. The `Instructor` and `Course` entities have that kind of many-to-many relationship, and your next step is to create an entity class to function as a join table without payload.
 
-(EF 6.x supports implicit join tables for many-to-many relationships, but EF Core doesn't. For more information, see the [discussion in the EF Core GitHub repository](https://github.com/aspnet/EntityFramework/issues/1368).)
+EF Core supports implicit join tables for many-to-many relationships, but this tutoral has not been updated to use an implicit join table. See [Many-to-Many Relationships](xref:data/ef-rp/complex-data-model#many-to-many-relationships), the Razor Pages version of this tutorial which has been updated.
 
 ## The CourseAssignment entity
 
 ![CourseAssignment entity](complex-data-model/_static/courseassignment-entity.png)
 
-Create *Models/CourseAssignment.cs* with the following code:
+Create `Models/CourseAssignment.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu/Models/CourseAssignment.cs)]
 
@@ -380,13 +379,13 @@ A join table is required in the database for the Instructor-to-Courses many-to-m
 
 ### Composite key
 
-Since the foreign keys are not nullable and together uniquely identify each row of the table, there's no need for a separate primary key. The *InstructorID* and *CourseID* properties should function as a composite primary key. The only way to identify composite primary keys to EF is by using the *fluent API* (it can't be done by using attributes). You'll see how to configure the composite primary key in the next section.
+Since the foreign keys are not nullable and together uniquely identify each row of the table, there's no need for a separate primary key. The `InstructorID` and `CourseID` properties should function as a composite primary key. The only way to identify composite primary keys to EF is by using the *fluent API* (it can't be done by using attributes). You'll see how to configure the composite primary key in the next section.
 
 The composite key ensures that while you can have multiple rows for one course, and multiple rows for one instructor, you can't have multiple rows for the same instructor and course. The `Enrollment` join entity defines its own primary key, so duplicates of this sort are possible. To prevent such duplicates, you could add a unique index on the foreign key fields, or configure `Enrollment` with a primary composite key similar to `CourseAssignment`. For more information, see [Indexes](/ef/core/modeling/indexes).
 
 ## Update the database context
 
-Add the following highlighted code to the *Data/SchoolContext.cs* file:
+Add the following highlighted code to the `Data/SchoolContext.cs` file:
 
 [!code-csharp[](intro/samples/cu/Data/SchoolContext.cs?name=snippet_BeforeInheritance&highlight=15-18,25-31)]
 
@@ -417,11 +416,11 @@ The following illustration shows the diagram that the Entity Framework Power Too
 
 ![Entity diagram](complex-data-model/_static/diagram.png)
 
-Besides the one-to-many relationship lines (1 to \*), you can see here the one-to-zero-or-one relationship line (1 to 0..1) between the Instructor and OfficeAssignment entities and the zero-or-one-to-many relationship line (0..1 to *) between the Instructor and Department entities.
+Besides the one-to-many relationship lines (1 to \*), you can see here the one-to-zero-or-one relationship line (1 to 0..1) between the `Instructor` and `OfficeAssignment` entities and the zero-or-one-to-many relationship line (0..1 to *) between the Instructor and Department entities.
 
 ## Seed database with test data
 
-Replace the code in the *Data/DbInitializer.cs* file with the following code in order to provide seed data for the new entities you've created.
+Replace the code in the `Data/DbInitializer.cs` file with the following code in order to provide seed data for the new entities you've created.
 
 [!code-csharp[](intro/samples/cu/Data/DbInitializer.cs?name=snippet_Final)]
 
@@ -446,11 +445,11 @@ If you tried to run the `database update` command at this point (don't do it yet
 
 > The ALTER TABLE statement conflicted with the FOREIGN KEY constraint "FK_dbo.Course_dbo.Department_DepartmentID". The conflict occurred in database "ContosoUniversity", table "dbo.Department", column 'DepartmentID'.
 
-Sometimes when you execute migrations with existing data, you need to insert stub data into the database to satisfy foreign key constraints. The generated code in the `Up` method adds a non-nullable DepartmentID foreign key to the Course table. If there are already rows in the Course table when the code runs, the `AddColumn` operation fails because SQL Server doesn't know what value to put in the column that can't be null. For this tutorial you'll run the migration on a new database, but in a production application you'd have to make the migration handle existing data, so the following directions show an example of how to do that.
+Sometimes when you execute migrations with existing data, you need to insert stub data into the database to satisfy foreign key constraints. The generated code in the `Up` method adds a non-nullable `DepartmentID` foreign key to the `Course` table. If there are already rows in the Course table when the code runs, the `AddColumn` operation fails because SQL Server doesn't know what value to put in the column that can't be null. For this tutorial you'll run the migration on a new database, but in a production application you'd have to make the migration handle existing data, so the following directions show an example of how to do that.
 
 To make this migration work with existing data you have to change the code to give the new column a default value, and create a stub department named "Temp" to act as the default department. As a result, existing Course rows will all be related to the "Temp" department after the `Up` method runs.
 
-* Open the *{timestamp}_ComplexDataModel.cs* file.
+* Open the `{timestamp}_ComplexDataModel.cs` file.
 
 * Comment out the line of code that adds the DepartmentID column to the Course table.
 
@@ -460,13 +459,13 @@ To make this migration work with existing data you have to change the code to gi
 
   [!code-csharp[](intro/samples/cu/Migrations/20170215234014_ComplexDataModel.cs?name=snippet_CreateDefaultValue&highlight=22-32)]
 
-In a production application, you would write code or scripts to add Department rows and relate Course rows to the new Department rows. You would then no longer need the "Temp" department or the default value on the Course.DepartmentID column.
+In a production application, you would write code or scripts to add Department rows and relate Course rows to the new Department rows. You would then no longer need the "Temp" department or the default value on the `Course.DepartmentID` column.
 
 Save your changes and build the project.
 
 ## Change the connection string
 
-You now have new code in the `DbInitializer` class that adds seed data for the new entities to an empty database. To make EF create a new empty database, change the name of the database in the connection string in *appsettings.json* to ContosoUniversity3 or some other name that you haven't used on the computer you're using.
+You now have new code in the `DbInitializer` class that adds seed data for the new entities to an empty database. To make EF create a new empty database, change the name of the database in the connection string in `appsettings.json` to ContosoUniversity3 or some other name that you haven't used on the computer you're using.
 
 ```json
 {
@@ -475,7 +474,7 @@ You now have new code in the `DbInitializer` class that adds seed data for the n
   },
 ```
 
-Save your change to *appsettings.json*.
+Save your change to `appsettings.json`.
 
 > [!NOTE]
 > As an alternative to changing the database name, you can delete the database. Use **SQL Server Object Explorer** (SSOX) or the `database drop` CLI command:

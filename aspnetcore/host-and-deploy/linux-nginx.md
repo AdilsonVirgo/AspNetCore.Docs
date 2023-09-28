@@ -1,24 +1,23 @@
 ---
 title: Host ASP.NET Core on Linux with Nginx
 author: rick-anderson
-description: Learn how to set up Nginx as a reverse proxy on Ubuntu 16.04 to forward HTTP traffic to an ASP.NET Core web app running on Kestrel.
-monikerRange: '>= aspnetcore-2.1'
+description: Learn how to set up Nginx as a reverse proxy on Ubuntu, RHEL and SUSE to forward HTTP traffic to an ASP.NET Core web app running on Kestrel.
+monikerRange: '>= aspnetcore-3.1'
 ms.author: riande
-ms.custom: mvc
-ms.date: 10/30/2020
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.custom: mvc, engagement-fy23
+ms.date: 5/8/2023
 uid: host-and-deploy/linux-nginx
 ---
 # Host ASP.NET Core on Linux with Nginx
 
 By [Sourabh Shirhatti](https://twitter.com/sshirhatti)
 
-This guide explains setting up a production-ready ASP.NET Core environment on an Ubuntu 16.04 server. These instructions likely work with newer versions of Ubuntu, but the instructions haven't been tested with newer versions.
+[!INCLUDE[](~/includes/not-latest-version.md)]
+
+:::moniker range=">= aspnetcore-6.0"
+This guide explains setting up a production-ready ASP.NET Core environment for Ubuntu, Red Hat Enterprise (RHEL), and SUSE Linux Enterprise Server.
 
 For information on other Linux distributions supported by ASP.NET Core, see [Prerequisites for .NET Core on Linux](/dotnet/core/linux-prerequisites).
-
-> [!NOTE]
-> For Ubuntu 14.04, `supervisord` is recommended as a solution for monitoring the Kestrel process. `systemd` isn't available on Ubuntu 14.04. For Ubuntu 14.04 instructions, see the [previous version of this topic](https://github.com/dotnet/AspNetCore.Docs/blob/e9c1419175c4dd7e152df3746ba1df5935aaafd5/aspnetcore/publishing/linuxproduction.md).
 
 This guide:
 
@@ -29,9 +28,25 @@ This guide:
 
 ## Prerequisites
 
-* Access to an Ubuntu 16.04 server with a standard user account with sudo privilege.
-* The latest non-preview [.NET runtime installed](/dotnet/core/install/linux) on the server.
+# [Ubuntu](#tab/linux-ubuntu)
+
+* Access to Ubuntu 20.04 with a standard user account with sudo privilege.
+* The latest stable [.NET runtime installed](/dotnet/core/install/linux) on the server.
 * An existing ASP.NET Core app.
+
+# [Red Hat Enterprise Linux](#tab/linux-rhel)
+
+* Access to Red Hat Enterprise (RHEL) 8.0 or later with a standard user account with sudo privilege.
+* The latest stable [.NET runtime installed](/dotnet/core/install/linux) on the server.
+* An existing ASP.NET Core app.
+
+# [SUSE Linux Enterprise Server](#tab/linux-sles)
+
+* Access to SLES 12 or 15 with a standard user account with sudo privilege.
+* The latest stable [.NET runtime installed](/dotnet/core/install/linux) on the server.
+* An existing ASP.NET Core app.
+
+---
 
 At any point in the future after upgrading the shared framework, restart the ASP.NET Core apps hosted by the server.
 
@@ -39,12 +54,28 @@ At any point in the future after upgrading the shared framework, restart the ASP
 
 Configure the app for a [framework-dependent deployment](/dotnet/core/deploying/#framework-dependent-deployments-fdd).
 
-If the app is run locally and isn't configured to make secure connections (HTTPS), adopt either of the following approaches:
+If the app is run locally in the [Development environment](xref:fundamentals/environments#configure-services-and-middleware-by-environment) and isn't configured by the server to make secure HTTPS connections, adopt either of the following approaches:
 
 * Configure the app to handle secure local connections. For more information, see the [HTTPS configuration](#https-configuration) section.
-* Remove `https://localhost:5001` (if present) from the `applicationUrl` property in the `Properties/launchSettings.json` file.
 
-Run [dotnet publish](/dotnet/core/tools/dotnet-publish) from the development environment to package an app into a directory (for example, `bin/Release/{TARGET FRAMEWORK MONIKER}/publish`, where the placeholder `{TARGET FRAMEWORK MONIKER}` is the Target Framework Moniker/TFM) that can run on the server:
+* Configure the app to run at the insecure endpoint:
+
+  * Deactivate HTTPS Redirection Middleware in the Development environment (`Program.cs`):
+
+    ```csharp
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHttpsRedirection();
+    }
+    ```
+
+    For more information, see <xref:fundamentals/environments#configure-services-and-middleware-by-environment>.
+
+  * Remove `https://localhost:5001` (if present) from the `applicationUrl` property in the `Properties/launchSettings.json` file.
+
+For more information on configuration by environment, see <xref:fundamentals/environments>.
+
+Run [dotnet publish](/dotnet/core/tools/dotnet-publish) from the development environment to package an app into a directory (for example, `bin/Release/{TARGET FRAMEWORK MONIKER}/publish`, where the `{TARGET FRAMEWORK MONIKER}` placeholder is the [Target Framework Moniker (TFM)](/dotnet/standard/frameworks)) that can run on the server:
 
 ```dotnetcli
 dotnet publish --configuration Release
@@ -76,41 +107,33 @@ Because requests are forwarded by reverse proxy, use the [Forwarded Headers Midd
 
 [!INCLUDE[](~/includes/ForwardedHeaders.md)]
 
-Invoke the <xref:Microsoft.AspNetCore.Builder.ForwardedHeadersExtensions.UseForwardedHeaders%2A> method at the top of `Startup.Configure` before calling other middleware. Configure the middleware to forward the `X-Forwarded-For` and `X-Forwarded-Proto` headers:
+Invoke the <xref:Microsoft.AspNetCore.Builder.ForwardedHeadersExtensions.UseForwardedHeaders%2A> method before calling other middleware. Configure the middleware to forward the `X-Forwarded-For` and `X-Forwarded-Proto` headers:
 
-```csharp
-using Microsoft.AspNetCore.HttpOverrides;
-
-...
-
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
-
-app.UseAuthentication();
-```
+:::code language="csharp" source="~/host-and-deploy/linux-nginx/sample7/Program.cs" id="snippet_1":::
 
 If no <xref:Microsoft.AspNetCore.Builder.ForwardedHeadersOptions> are specified to the middleware, the default headers to forward are `None`.
 
-Proxies running on loopback addresses (`127.0.0.0/8`, `[::1]`), including the standard localhost address (`127.0.0.1`), are trusted by default. If other trusted proxies or networks within the organization handle requests between the Internet and the web server, add them to the list of <xref:Microsoft.AspNetCore.Builder.ForwardedHeadersOptions.KnownProxies%2A> or <xref:Microsoft.AspNetCore.Builder.ForwardedHeadersOptions.KnownNetworks%2A> with <xref:Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>. The following example adds a trusted proxy server at IP address 10.0.0.100 to the Forwarded Headers Middleware `KnownProxies` in `Startup.ConfigureServices`:
+Proxies running on loopback addresses (`127.0.0.0/8`, `[::1]`), including the standard localhost address (`127.0.0.1`), are trusted by default. If other trusted proxies or networks within the organization handle requests between the internet and the web server, add them to the list of <xref:Microsoft.AspNetCore.Builder.ForwardedHeadersOptions.KnownProxies%2A> or <xref:Microsoft.AspNetCore.Builder.ForwardedHeadersOptions.KnownNetworks%2A> with <xref:Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>. The following example adds a trusted proxy server at IP address `10.0.0.100` to the Forwarded Headers Middleware `KnownProxies`:
 
-```csharp
-using System.Net;
-
-...
-
-services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.KnownProxies.Add(IPAddress.Parse("10.0.0.100"));
-});
-```
+:::code language="csharp" source="~/host-and-deploy/linux-nginx/sample7/Program.cs" id="snippet_all":::
 
 For more information, see <xref:host-and-deploy/proxy-load-balancer>.
 
 ### Install Nginx
 
-Use `apt-get` to install Nginx. The installer creates a `systemd` init script that runs Nginx as daemon on system startup. Follow the installation instructions for Ubuntu at [Nginx: Official Debian/Ubuntu packages](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/#official-debian-ubuntu-packages).
+# [Ubuntu](#tab/linux-ubuntu)
+
+Use `apt-get` to install Nginx. The installer creates a [`systemd`](https://systemd.io/) init script that runs Nginx as daemon on system startup. Follow the installation instructions for Ubuntu at [Nginx: Official Debian/Ubuntu packages](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/#official-debian-ubuntu-packages).
+
+# [Red Hat Enterprise Linux](#tab/linux-rhel)
+
+Use `yum-utils` to select and install an Nginx module stream. Follow the installation instructions for RHEL at [Nginx: Linux packages - RHEL](https://nginx.org/en/linux_packages.html#RHEL).
+
+# [SUSE Linux Enterprise Server](#tab/linux-sles)
+
+Use `yum-utils` to select and install an Nginx module stream. Follow the installation instructions for SLES at [Nginx: Linux packages - SLES](https://nginx.org/en/linux_packages.html#SLES).
+
+---
 
 > [!NOTE]
 > If optional Nginx modules are required, building Nginx from source might be required.
@@ -125,14 +148,32 @@ Verify a browser displays the default landing page for Nginx. The landing page i
 
 ### Configure Nginx
 
-To configure Nginx as a reverse proxy to forward HTTP requests to your ASP.NET Core app, modify `/etc/nginx/sites-available/default`. Open it in a text editor, and replace the contents with the following snippet:
+# [Ubuntu](#tab/linux-ubuntu)
 
-```nginx
+To configure Nginx as a reverse proxy to forward HTTP requests to the ASP.NET Core app, modify `/etc/nginx/sites-available/default` and  recreate the symlink. After creating the `/etc/nginx/sites-available/default` file,  use the following command to create the symlink:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+```
+
+Open `/etc/nginx/sites-available/default` in a text editor, and replace the contents with the following snippet:
+
+# [Red Hat Enterprise Linux](#tab/linux-rhel)
+
+To configure Nginx as a reverse proxy to forward HTTP requests to an ASP.NET Core app, modify `/etc/nginx.conf`. Replace the `server{}` code block with the following snippet:
+
+# [SUSE Linux Enterprise Server](#tab/linux-sles)
+
+To configure Nginx as a reverse proxy to forward HTTP requests to an ASP.NET Core app, modify `/etc/nginx.conf`. Replace the `server{}` code block with the following snippet:
+
+---
+
+```text
 server {
     listen        80;
     server_name   example.com *.example.com;
     location / {
-        proxy_pass         http://localhost:5000;
+        proxy_pass         http://127.0.0.1:5000;
         proxy_http_version 1.1;
         proxy_set_header   Upgrade $http_upgrade;
         proxy_set_header   Connection keep-alive;
@@ -148,7 +189,7 @@ If the app is a SignalR or Blazor Server app, see <xref:signalr/scale#linux-with
 
 When no `server_name` matches, Nginx uses the default server. If no default server is defined, the first server in the configuration file is the default server. As a best practice, add a specific default server that returns a status code of 444 in your configuration file. A default server configuration example is:
 
-```nginx
+```text
 server {
     listen   80 default_server;
     # listen [::]:80 default_server deferred;
@@ -156,20 +197,10 @@ server {
 }
 ```
 
-::: moniker range=">= aspnetcore-5.0"
-
-With the preceding configuration file and default server, Nginx accepts public traffic on port 80 with host header `example.com` or `*.example.com`. Requests not matching these hosts won't get forwarded to Kestrel. Nginx forwards the matching requests to Kestrel at `http://localhost:5000`. For more information, see [How nginx processes a request](https://nginx.org/docs/http/request_processing.html). To change Kestrel's IP/port, see [Kestrel: Endpoint configuration](xref:fundamentals/servers/kestrel/endpoints).
-
-::: moniker-end
-
-::: moniker range="< aspnetcore-5.0"
-
-With the preceding configuration file and default server, Nginx accepts public traffic on port 80 with host header `example.com` or `*.example.com`. Requests not matching these hosts won't get forwarded to Kestrel. Nginx forwards the matching requests to Kestrel at `http://localhost:5000`. For more information, see [How nginx processes a request](https://nginx.org/docs/http/request_processing.html). To change Kestrel's IP/port, see [Kestrel: Endpoint configuration](xref:fundamentals/servers/kestrel#endpoint-configuration).
-
-::: moniker-end
+With the preceding configuration file and default server, Nginx accepts public traffic on port 80 with host header `example.com` or `*.example.com`. Requests not matching these hosts won't get forwarded to Kestrel. Nginx forwards the matching requests to Kestrel at `http://127.0.0.1:5000`. For more information, see [How nginx processes a request](https://nginx.org/docs/http/request_processing.html). To change Kestrel's IP/port, see [Kestrel: Endpoint configuration](xref:fundamentals/servers/kestrel/endpoints).
 
 > [!WARNING]
-> Failure to specify a proper [server_name directive](https://nginx.org/docs/http/server_names.html) exposes your app to security vulnerabilities. Subdomain wildcard binding (for example, `*.example.com`) doesn't pose this security risk if you control the entire parent domain (as opposed to `*.com`, which is vulnerable). For more information, see [rfc7230 section-5.4](https://tools.ietf.org/html/rfc7230#section-5.4).
+> Failure to specify a proper [server_name directive](https://nginx.org/docs/http/server_names.html) exposes your app to security vulnerabilities. Subdomain wildcard binding (for example, `*.example.com`) doesn't pose this security risk if you control the entire parent domain (as opposed to `*.com`, which is vulnerable). For more information, see [RFC 9110: HTTP Semantics (Section 7.2: Host and :authority)](https://www.rfc-editor.org/rfc/rfc9110#field.host).
 
 Once the Nginx configuration is established, run `sudo nginx -t` to verify the syntax of the configuration files. If the configuration file test is successful, force Nginx to pick up the changes by running `sudo nginx -s reload`.
 
@@ -178,13 +209,29 @@ To directly run the app on the server:
 1. Navigate to the app's directory.
 1. Run the app: `dotnet <app_assembly.dll>`, where `app_assembly.dll` is the assembly file name of the app.
 
-If the app runs on the server but fails to respond over the Internet, check the server's firewall and confirm port 80 is open. If using an Azure Ubuntu VM, add a Network Security Group (NSG) rule that enables inbound port 80 traffic. There's no need to enable an outbound port 80 rule, as the outbound traffic is automatically granted when the inbound rule is enabled.
+# [Ubuntu](#tab/linux-ubuntu)
 
-When done testing the app, shut down the app with <kbd>Ctrl</kbd> + <kbd>C</kbd> at the command prompt.
+If the app runs on the server but fails to respond over the internet, check the server's firewall and confirm port 80 is open. If using an Azure Ubuntu VM, add a Network Security Group (NSG) rule that enables inbound port 80 traffic. There's no need to enable an outbound port 80 rule, as the outbound traffic is automatically granted when the inbound rule is enabled.
+
+# [Red Hat Enterprise Linux](#tab/linux-rhel)
+
+If the app runs on the server but fails to respond over the internet, check the server's firewall and confirm port 80 is open.
+
+# [SUSE Linux Enterprise Server](#tab/linux-sles)
+
+If the app runs on the server but fails to respond over the internet, check the server's firewall and confirm port 80 is open.
+
+---
+
+When done testing the app, shut down the app with <kbd>Ctrl</kbd>+<kbd>C</kbd> (Windows) or <kbd>⌘</kbd>+<kbd>C</kbd> (macOS) at the command prompt.
+
+### Increase keepalive_requests
+
+[`keepalive_requests`](http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_requests) can be increased for [higher performance](https://www.nginx.com/blog/10-tips-for-10x-application-performance/#web-server-tuning), For more information, see [this GitHub issue](https://github.com/dotnet/AspNetCore.Docs/issues/22141#issuecomment-1442435506).
 
 ## Monitor the app
 
-The server is set up to forward requests made to `http://<serveraddress>:80` on to the ASP.NET Core app running on Kestrel at `http://127.0.0.1:5000`. However, Nginx isn't set up to manage the Kestrel process. `systemd` can be used to create a service file to start and monitor the underlying web app. `systemd` is an init system that provides many powerful features for starting, stopping, and managing processes. 
+The server is set up to forward requests made to `http://<serveraddress>:80` on to the ASP.NET Core app running on Kestrel at `http://127.0.0.1:5000`. However, Nginx isn't set up to manage the Kestrel process. [`systemd`](https://systemd.io/) can be used to create a service file to start and monitor the underlying web app. `systemd` is an init system that provides many powerful features for starting, stopping, and managing processes.
 
 ### Create the service file
 
@@ -194,11 +241,11 @@ Create the service definition file:
 sudo nano /etc/systemd/system/kestrel-helloapp.service
 ```
 
-The following example is a service file for the app:
+The following example is an `.ini` service file for the app:
 
-```ini
+```text
 [Unit]
-Description=Example .NET Web API App running on Ubuntu
+Description=Example .NET Web API App running on Linux
 
 [Service]
 WorkingDirectory=/var/www/helloapp
@@ -220,7 +267,7 @@ In the preceding example, the user that manages the service is specified by the 
 
 Use `TimeoutStopSec` to configure the duration of time to wait for the app to shut down after it receives the initial interrupt signal. If the app doesn't shut down in this period, SIGKILL is issued to terminate the app. Provide the value as unitless seconds (for example, `150`), a time span value (for example, `2min 30s`), or `infinity` to disable the timeout. `TimeoutStopSec` defaults to the value of `DefaultTimeoutStopSec` in the manager configuration file (`systemd-system.conf`, `system.conf.d`, `systemd-user.conf`, `user.conf.d`). The default timeout for most distributions is 90 seconds.
 
-```
+```text
 # The default value is 90 seconds for most distributions.
 TimeoutStopSec=90
 ```
@@ -233,18 +280,9 @@ Some values (for example, SQL connection strings) must be escaped for the config
 systemd-escape "<value-to-escape>"
 ```
 
-::: moniker range=">= aspnetcore-3.0"
-
 Colon (`:`) separators aren't supported in environment variable names. Use a double underscore (`__`) in place of a colon. The [Environment Variables configuration provider](xref:fundamentals/configuration/index#environment-variables) converts double-underscores into colons when environment variables are read into configuration. In the following example, the connection string key `ConnectionStrings:DefaultConnection` is set into the service definition file as `ConnectionStrings__DefaultConnection`:
 
-::: moniker-end
-::: moniker range="< aspnetcore-3.0"
-
-Colon (`:`) separators aren't supported in environment variable names. Use a double underscore (`__`) in place of a colon. The [Environment Variables configuration provider](xref:fundamentals/configuration/index#environment-variables-configuration-provider) converts double-underscores into colons when environment variables are read into configuration. In the following example, the connection string key `ConnectionStrings:DefaultConnection` is set into the service definition file as `ConnectionStrings__DefaultConnection`:
-
-::: moniker-end
-
-```
+```console
 Environment=ConnectionStrings__DefaultConnection={Connection String}
 ```
 
@@ -256,11 +294,11 @@ sudo systemctl enable kestrel-helloapp.service
 
 Start the service and verify that it's running.
 
-```
+```bash
 sudo systemctl start kestrel-helloapp.service
 sudo systemctl status kestrel-helloapp.service
 
-◝ kestrel-helloapp.service - Example .NET Web API App running on Ubuntu
+◝ kestrel-helloapp.service - Example .NET Web API App running on Linux
     Loaded: loaded (/etc/systemd/system/kestrel-helloapp.service; enabled)
     Active: active (running) since Thu 2016-10-18 04:09:35 NZDT; 35s ago
 Main PID: 9021 (dotnet)
@@ -281,7 +319,7 @@ Transfer-Encoding: chunked
 
 ### View logs
 
-Since the web app using Kestrel is managed using `systemd`, all events and processes are logged to a centralized journal. However, this journal includes all entries for all services and processes managed by `systemd`. To view the `kestrel-helloapp.service`-specific items, use the following command:
+Since the web app using Kestrel is managed using [`systemd`](https://systemd.io/), all events and processes are logged to a centralized journal. However, this journal includes all entries for all services and processes managed by `systemd`. To view the `kestrel-helloapp.service`-specific items, use the following command:
 
 ```bash
 sudo journalctl -fu kestrel-helloapp.service
@@ -310,7 +348,7 @@ To configure data protection to persist and encrypt the key ring, see:
 
 ## Long request header fields
 
-Proxy server default settings typically limit request header fields to 4 K or 8 K depending on the platform. An app may require fields longer than the default (for example, apps that use [Azure Active Directory](https://azure.microsoft.com/services/active-directory/)). If longer fields are required, the proxy server's default settings require adjustment. The values to apply depend on the scenario. For more information, see your server's documentation.
+Proxy server default settings typically limit request header fields to 4 K or 8 K depending on the platform. An app may require fields longer than the default (for example, apps that use [Microsoft Entra ID](https://azure.microsoft.com/services/active-directory/)). If longer fields are required, the proxy server's default settings require adjustment. The values to apply depend on the scenario. For more information, see your server's documentation.
 
 * [proxy_buffer_size](https://nginx.org/docs/http/ngx_http_proxy_module.html#proxy_buffer_size)
 * [proxy_buffers](https://nginx.org/docs/http/ngx_http_proxy_module.html#proxy_buffers)
@@ -330,8 +368,10 @@ Linux Security Modules (LSM) is a framework that's part of the Linux kernel sinc
 
 Close off all external ports that aren't in use. Uncomplicated firewall (ufw) provides a front end for `iptables` by providing a CLI for configuring the firewall.
 
+# [Ubuntu](#tab/linux-ubuntu)
+
 > [!WARNING]
-> A firewall will prevent access to the whole system if not configured correctly. Failure to specify the correct SSH port will effectively lock you out of the system if you are using SSH to connect to it. The default port is 22. For more information, see the [introduction to ufw](https://help.ubuntu.com/community/UFW) and the [manual](https://manpages.ubuntu.com/manpages/bionic/man8/ufw.8.html).
+> A firewall prevents access to the whole system if not configured correctly. Failure to specify the correct SSH port effectively locks you out of the system if you are using SSH to connect to it. The default port is 22. For more information, see the [introduction to ufw](https://help.ubuntu.com/community/UFW) and the [manual](https://manpages.ubuntu.com/manpages/lunar/en/man8/ufw.8.html).
 
 Install `ufw` and configure it to allow traffic on any ports needed.
 
@@ -345,13 +385,49 @@ sudo ufw allow 443/tcp
 sudo ufw enable
 ```
 
+# [Red Hat Enterprise Linux](#tab/linux-rhel)
+
+> [!WARNING]
+> A firewall prevents access to the whole system if not configured correctly. Failure to specify the correct SSH port effectively locks you out of the system if you are using SSH to connect to it. The default port is 22. For more information, see the [introduction to ufw](https://help.ubuntu.com/community/UFW).
+
+Install `ufw` and configure it to allow traffic on any ports needed.
+
+```bash
+sudo yum -y install ufw
+
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+sudo ufw enable
+```
+
+# [SUSE Linux Enterprise Server](#tab/linux-sles)
+
+> [!WARNING]
+> A firewall prevents access to the whole system if not configured correctly. Failure to specify the correct SSH port effectively locks you out of the system if you are using SSH to connect to it. The default port is 22. For more information, see the [introduction to ufw](https://help.ubuntu.com/community/UFW).
+
+Install `ufw` and configure it to allow traffic on any ports needed.
+
+```bash
+sudo yum -y install ufw
+
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+sudo ufw enable
+```
+
+---
+
 ### Secure Nginx
 
 #### Change the Nginx response name
 
 Edit `src/http/ngx_http_header_filter_module.c`:
 
-```
+```c
 static char ngx_http_server_string[] = "Server: Web Server" CRLF;
 static char ngx_http_server_full_string[] = "Server: Web Server" CRLF;
 ```
@@ -364,36 +440,31 @@ Configure the server with additional required modules. Consider using a web app 
 
 **Configure the app for secure (HTTPS) local connections**
 
-The [dotnet run](/dotnet/core/tools/dotnet-run) command uses the app's *Properties/launchSettings.json* file, which configures the app to listen on the URLs provided by the `applicationUrl` property. For example, `https://localhost:5001;http://localhost:5000`.
+The [dotnet run](/dotnet/core/tools/dotnet-run) command uses the app's `Properties/launchSettings.json` file, which configures the app to listen on the URLs provided by the `applicationUrl` property. For example, `https://localhost:5001;http://localhost:5000`.
 
 Configure the app to use a certificate in development for the `dotnet run` command or development environment (<kbd>F5</kbd> or <kbd>Ctrl</kbd>+<kbd>F5</kbd> in Visual Studio Code) using one of the following approaches:
-
-::: moniker range=">= aspnetcore-5.0"
 
 * [Replace the default certificate from configuration](xref:fundamentals/servers/kestrel/endpoints#configuration) (*Recommended*)
 * [KestrelServerOptions.ConfigureHttpsDefaults](xref:fundamentals/servers/kestrel/endpoints#configurehttpsdefaultsactionhttpsconnectionadapteroptions)
 
-::: moniker-end
-
-::: moniker range="< aspnetcore-5.0"
-
-* [Replace the default certificate from configuration](xref:fundamentals/servers/kestrel#configuration) (*Recommended*)
-* [KestrelServerOptions.ConfigureHttpsDefaults](xref:fundamentals/servers/kestrel#configurehttpsdefaultsactionhttpsconnectionadapteroptions)
-
-::: moniker-end
-
 **Configure the reverse proxy for secure (HTTPS) client connections**
+
+> [!WARNING]
+> The security configuration in this section is a general configuration to be used as a starting point for further customization. We're unable to provide support for third-party tooling, servers, and operating systems. *Use the configuration in this section at your own risk.* For more information, access the following resources:
+>
+> * [Configuring HTTPS servers](http://nginx.org/docs/http/configuring_https_servers.html) (Nginx documentation)
+> * [mozilla.org SSL Configuration Generator](https://ssl-config.mozilla.org/#server=nginx)
 
 * Configure the server to listen to HTTPS traffic on port 443 by specifying a valid certificate issued by a trusted Certificate Authority (CA).
 
-* Harden the security by employing some of the practices depicted in the following */etc/nginx/nginx.conf* file. Examples include choosing a stronger cipher and redirecting all traffic over HTTP to HTTPS.
+* Harden the security by employing some of the practices depicted in the following */etc/nginx/nginx.conf* file.
+
+* The following example doesn't configure the server to redirect insecure requests. We recommend using HTTPS Redirection Middleware. For more information, see <xref:security/enforcing-ssl>.
 
   > [!NOTE]
-  > For development environments, we recommend using temporary redirects (302) rather than permanent redirects (301). Link caching can cause unstable behavior in development environments.
+  > For development environments where the server configuration handles secure redirection instead of HTTPS Redirection Middleware, we recommend using temporary redirects (302) rather than permanent redirects (301). Link caching can cause unstable behavior in development environments.
 
-* Adding an `HTTP Strict-Transport-Security` (HSTS) header ensures all subsequent requests made by the client are over HTTPS.
-
-  For important guidance on HSTS, see <xref:security/enforcing-ssl#http-strict-transport-security-protocol-hsts>.
+* Adding a `Strict-Transport-Security` (HSTS) header ensures all subsequent requests made by the client are over HTTPS. For guidance on setting the `Strict-Transport-Security` header, see <xref:security/enforcing-ssl#http-strict-transport-security-protocol-hsts>.
 
 * If HTTPS will be disabled in the future, use one of the following approaches:
 
@@ -402,14 +473,34 @@ Configure the app to use a certificate in development for the `dotnet run` comma
 
 Add the */etc/nginx/proxy.conf* configuration file:
 
-[!code-nginx[](linux-nginx/proxy.conf)]
+[!code-nginx[](~/host-and-deploy/linux-nginx/proxy.conf)]
+
+# [Ubuntu](#tab/linux-ubuntu)
 
 **Replace** the contents of the */etc/nginx/nginx.conf* configuration file with the following file. The example contains both `http` and `server` sections in one configuration file.
 
-[!code-nginx[](linux-nginx/nginx.conf?highlight=2)]
+# [Red Hat Enterprise Linux](#tab/linux-rhel)
+
+Modify `/etc/nginx/nginx.conf`. Open it in a text editor, and replace the `http{}` and `server{}` code blocks with contents with the following snippet:
+
+# [SUSE Linux Enterprise Server](#tab/linux-sles)
+
+Modify `/etc/nginx/nginx.conf`. Open it in a text editor, and replace the `http{}` and `server{}` code blocks with contents with the following snippet:
+
+---
+
+[!code-nginx[](~/host-and-deploy/linux-nginx/nginx.conf)]
 
 > [!NOTE]
 > Blazor WebAssembly apps require a larger `burst` parameter value to accommodate the larger number of requests made by an app. For more information, see <xref:blazor/host-and-deploy/webassembly#nginx>.
+
+> [!NOTE]
+> The preceding example disables Online Certificate Status Protocol (OCSP) Stapling. If enabled, confirm that the certificate supports the feature. For more information and guidance on enabling OCSP, see the following properties in the [Module ngx_http_ssl_module (Nginx documentation)](http://nginx.org/en/docs/http/ngx_http_ssl_module.html) article:
+>
+> * `ssl_stapling`
+> * `ssl_stapling_file`
+> * `ssl_stapling_responder`
+> * `ssl_stapling_verify`
 
 #### Secure Nginx from clickjacking
 
@@ -423,7 +514,7 @@ To mitigate clickjacking attacks:
    sudo nano /etc/nginx/nginx.conf
    ```
 
-   Add the line: `add_header X-Frame-Options "SAMEORIGIN";`
+   Within the `http{}` code block, add the line: `add_header X-Frame-Options "SAMEORIGIN";`
 
 1. Save the file.
 1. Restart Nginx.
@@ -438,7 +529,7 @@ This header prevents most browsers from MIME-sniffing a response away from the d
    sudo nano /etc/nginx/nginx.conf
    ```
 
-   Add the line: `add_header X-Content-Type-Options "nosniff";`
+   Within the `http{}` code block, add the line: `add_header X-Content-Type-Options "nosniff";`
 
 1. Save the file.
 1. Restart Nginx.
@@ -454,3 +545,7 @@ After upgrading the shared framework on the server, restart the ASP.NET Core app
 * <xref:test/troubleshoot>
 * <xref:host-and-deploy/proxy-load-balancer>
 * [NGINX: Using the Forwarded header](https://www.nginx.com/resources/wiki/start/topics/examples/forwarded/)
+
+:::moniker-end
+
+[!INCLUDE[](~/host-and-deploy/linux-nginx/includes/linux-nginx5.md)]

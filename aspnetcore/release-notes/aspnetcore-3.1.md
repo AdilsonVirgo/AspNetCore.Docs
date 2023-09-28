@@ -5,7 +5,6 @@ description: Learn about the new features in ASP.NET Core 3.1.
 ms.author: riande
 ms.custom: mvc
 ms.date: 02/12/2020
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: aspnetcore-3.1
 ---
 # What's new in ASP.NET Core 3.1
@@ -16,7 +15,7 @@ This article highlights the most significant changes in ASP.NET Core 3.1 with li
 
 Razor components are now generated as partial classes. Code for a Razor component can be written using a code-behind file defined as a partial class rather than defining all the code for the component in a single file. For more information, see [Partial class support](xref:blazor/components/index#partial-class-support).
 
-## Blazor Component Tag Helper and pass parameters to top-level components
+## Component Tag Helper and pass parameters to top-level components
 
 In Blazor with ASP.NET Core 3.0, components were rendered into pages and views using an HTML Helper (`Html.RenderComponentAsync`). In ASP.NET Core 3.1, render a component from a page or view with the new Component Tag Helper:
 
@@ -35,11 +34,11 @@ For example, prerender a `Counter` component with an increment amount (`Incremen
     param-IncrementAmount="10" />
 ```
 
-For more information, see [Integrate components into Razor Pages and MVC apps](xref:blazor/components/prerendering-and-integration).
+For more information, see [Integrate components into Razor Pages and MVC apps](xref:blazor/components/prerendering-and-integration?view=aspnetcore-3.1&preserve-view=true).
 
 ## Support for shared queues in HTTP.sys
 
-[HTTP.sys](xref:fundamentals/servers/httpsys) supports creating anonymous request queues. In ASP.NET Core 3.1, we've added to ability to create or attach to an existing named HTTP.sys request queue. Creating or attaching to an existing named HTTP.sys request queue enables scenarios where the HTTP.sys controller process that owns the queue is independent of the listener process. This independence makes it possible to preserve existing connections and enqueued requests between listener process restarts:
+[HTTP.sys](xref:fundamentals/servers/httpsys) supports creating anonymous request queues. In ASP.NET Core 3.1, we've added the ability to create or attach to an existing named HTTP.sys request queue. Creating or attaching to an existing named HTTP.sys request queue enables scenarios where the HTTP.sys controller process that owns the queue is independent of the listener process. This independence makes it possible to preserve existing connections and enqueued requests between listener process restarts:
 
 [!code-csharp[](sample/Program.cs?name=snippet)]
 
@@ -59,7 +58,7 @@ For more information, see [Prevent default actions](xref:blazor/components/event
 
 ## Stop event propagation in Blazor apps
 
-Use the `@on{EVENT}:stopPropagation` directive attribute to stop event propagation. In the following example, selecting the check box prevents click events from the child `<div>` from propagating to the parent `<div>`:
+Use the `@on{EVENT}:stopPropagation` directive attribute to stop event propagation. In the following example, selecting the checkbox prevents click events from the child `<div>` from propagating to the parent `<div>`:
 
 ```razor
 <input @bind="_stopPropagation" type="checkbox" />
@@ -84,4 +83,4 @@ When a Blazor app isn't functioning properly during development, receiving detai
 * During development, the gold bar directs you to the browser console, where you can see the exception.
 * In production, the gold bar notifies the user that an error has occurred and recommends refreshing the browser.
 
-For more information, see [Detailed errors during development](xref:blazor/fundamentals/handle-errors#detailed-errors-during-development).
+For more information, see <xref:blazor/fundamentals/handle-errors>.

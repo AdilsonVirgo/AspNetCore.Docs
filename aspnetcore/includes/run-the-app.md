@@ -1,6 +1,3 @@
----
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
----
 # [Visual Studio](#tab/visual-studio)
 
 * Press Ctrl+F5 to run without the debugger.
@@ -19,6 +16,14 @@ no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Bla
 
   
 # [Visual Studio for Mac](#tab/visual-studio-mac)
+
+* Select **Run** > **Start Without Debugging** to launch the app.
+
+  Visual Studio for Mac:
+
+  * Starts [Kestrel](xref:fundamentals/servers/index#kestrel) server.
+  * Launches a browser.
+  * Navigates to `http://localhost:port`, where *port* is a randomly chosen port number.
 
   [!INCLUDE[](~/includes/trustCertMac.md)]
 

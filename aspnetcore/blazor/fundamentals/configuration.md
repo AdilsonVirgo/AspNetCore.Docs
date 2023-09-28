@@ -1,33 +1,40 @@
 ---
 title: ASP.NET Core Blazor configuration
 author: guardrex
-description: Learn about configuration of Blazor apps, including app settings, authentication, and logging configuration.
+description: Learn about Blazor app configuration, including app settings, authentication, and logging configuration.
 monikerRange: '>= aspnetcore-3.1'
 ms.author: riande
 ms.custom: mvc
-ms.date: 12/10/2020
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 11/08/2022
 uid: blazor/fundamentals/configuration
 ---
 # ASP.NET Core Blazor configuration
 
-> [!NOTE]
-> This topic applies to Blazor WebAssembly. For general guidance on ASP.NET Core app configuration, see <xref:fundamentals/configuration/index>.
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
-Blazor WebAssembly loads configuration from the following app settings files by default:
+This article explains how to configure Blazor apps, including app settings, authentication, and logging configuration.
+
+[!INCLUDE[](~/blazor/includes/location-client.md)]
+
+For server-side ASP.NET Core app configuration, see <xref:fundamentals/configuration/index>.
+
+On the client, configuration is loaded from the following app settings files by default:
 
 * `wwwroot/appsettings.json`.
 * `wwwroot/appsettings.{ENVIRONMENT}.json`, where the `{ENVIRONMENT}` placeholder is the app's [runtime environment](xref:fundamentals/environments).
 
-Other configuration providers registered by the app can also provide configuration, but not all providers or provider features are appropriate for Blazor WebAssembly apps:
+> [!NOTE]
+> Logging configuration placed into an app settings file in `wwwroot` isn't loaded by default. For more information, see the [Logging configuration](#logging-configuration) section later in this article.
 
-* [Azure Key Vault configuration provider](xref:security/key-vault-configuration): The provider isn't supported for managed identity and application ID (client ID) with client secret scenarios. Application ID with a client secret isn't recommended for any ASP.NET Core app, especially Blazor WebAssembly apps because the client secret can't be secured client-side to access the Azure Key Vault service.
-* [Azure App configuration provider](/azure/azure-app-configuration/quickstart-aspnet-core-app): The provider isn't appropriate for Blazor WebAssembly apps because Blazor WebAssembly apps don't run on a server in Azure.
+Other configuration providers registered by the app can also provide configuration, but not all providers or provider features are appropriate:
 
-> [!WARNING]
-> Configuration in a Blazor WebAssembly app is visible to users. **Don't store app secrets, credentials, or any other sensitive data in the configuration of a Blazor WebAssembly app.**
+* [Azure Key Vault configuration provider](xref:security/key-vault-configuration): The provider isn't supported for managed identity and application ID (client ID) with client secret scenarios. Application ID with a client secret isn't recommended for any ASP.NET Core app, especially client-side apps because the client secret can't be secured client-side to access the Azure Key Vault service.
+* [Azure App configuration provider](/azure/azure-app-configuration/quickstart-aspnet-core-app): The provider isn't appropriate for client-side apps because they don't run on a server in Azure.
 
 For more information on configuration providers, see <xref:fundamentals/configuration/index>.
+
+> [!WARNING]
+> Configuration and settings files are visible to users on the client, and users can tamper with the data. **Don't store app secrets, credentials, or any other sensitive data in the app's configuration or files.**
 
 ## App settings configuration
 
@@ -35,27 +42,64 @@ Configuration in app settings files are loaded by default. In the following exam
 
 `wwwroot/appsettings.json`:
 
-```json
-{
-  "h1FontSize": "50px"
-}
-```
+:::moniker range=">= aspnetcore-7.0"
+
+:::code language="json" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/wwwroot/appsettings.json" highlight="2":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="json" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/wwwroot/appsettings.json" highlight="2":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="json" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/wwwroot/appsettings.json" highlight="2":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="json" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/wwwroot/appsettings.json" highlight="2":::
+
+:::moniker-end
 
 Inject an <xref:Microsoft.Extensions.Configuration.IConfiguration> instance into a component to access the configuration data.
 
-`Pages/ConfigurationExample.razor`:
+`ConfigExample.razor`:
 
-```razor
-@page "/configuration-example"
-@using Microsoft.Extensions.Configuration
-@inject IConfiguration Configuration
+:::moniker range=">= aspnetcore-7.0"
 
-<h1 style="font-size:@Configuration["h1FontSize"]">
-    Configuration example
-</h1>
-```
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Pages/configuration/ConfigExample.razor":::
 
-To read other configuration files from the `wwwroot` folder into configuration, use an <xref:System.Net.Http.HttpClient> to obtain the file's content. The following example reads a configuration file (`cars.json`) into the app's configuration.
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Pages/configuration/ConfigExample.razor":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Pages/configuration/ConfigExample.razor":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Pages/configuration/ConfigExample.razor":::
+
+:::moniker-end
+
+Client security restrictions prevent direct access to files via user code, including settings files for app configuration. To read configuration files in addition to `appsettings.json`/`appsettings.{ENVIRONMENT}.json` from the `wwwroot` folder into configuration, use an <xref:System.Net.Http.HttpClient>.
+
+> [!WARNING]
+> Configuration and settings files are visible to users on the client, and users can tamper with the data. **Don't store app secrets, credentials, or any other sensitive data in the app's configuration or files.**
+
+The following example reads a configuration file (`cars.json`) into the app's configuration.
 
 `wwwroot/cars.json`:
 
@@ -65,13 +109,13 @@ To read other configuration files from the `wwwroot` folder into configuration, 
 }
 ```
 
-Add the namespace for <xref:Microsoft.Extensions.Configuration?displayProperty=fullName> to `Program.cs`:
+Add the namespace for <xref:Microsoft.Extensions.Configuration?displayProperty=fullName> to the `Program` file:
 
 ```csharp
 using Microsoft.Extensions.Configuration;
 ```
 
-In `Program.Main` of `Program.cs`, modify the existing <xref:System.Net.Http.HttpClient> service registration to use the client to read the file:
+Modify the existing <xref:System.Net.Http.HttpClient> service registration to use the client to read the file:
 
 ```csharp
 var http = new HttpClient()
@@ -89,59 +133,67 @@ builder.Configuration.AddJsonStream(stream);
 
 ## Memory Configuration Source
 
-The following example uses a <xref:Microsoft.Extensions.Configuration.Memory.MemoryConfigurationSource> in `Program.Main` to supply additional configuration.
+The following example uses a <xref:Microsoft.Extensions.Configuration.Memory.MemoryConfigurationSource> in the `Program` file to supply additional configuration.
 
-Add the namespace for <xref:Microsoft.Extensions.Configuration.Memory?displayProperty=fullName> to `Program.cs`:
+Add the namespace for <xref:Microsoft.Extensions.Configuration.Memory?displayProperty=fullName> to the `Program` file:
 
 ```csharp
 using Microsoft.Extensions.Configuration.Memory;
 ```
 
-In `Program.Main` of `Program.cs`:
+In the `Program` file:
 
-```csharp
-var vehicleData = new Dictionary<string, string>()
-{
-    { "color", "blue" },
-    { "type", "car" },
-    { "wheels:count", "3" },
-    { "wheels:brand", "Blazin" },
-    { "wheels:brand:type", "rally" },
-    { "wheels:year", "2008" },
-};
+:::moniker range=">= aspnetcore-7.0"
 
-var memoryConfig = new MemoryConfigurationSource { InitialData = vehicleData };
+:::code language="csharp" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Program.cs" id="snippet1":::
 
-builder.Configuration.Add(memoryConfig);
-```
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+:::code language="csharp" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Program.cs" id="snippet1":::
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="csharp" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Program.cs" id="snippet1":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="csharp" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Program.cs" id="snippet1":::
+
+:::moniker-end
 
 Inject an <xref:Microsoft.Extensions.Configuration.IConfiguration> instance into a component to access the configuration data.
 
-`Pages/MemoryConfig.razor`:
+`MemoryConfig.razor`:
 
-```razor
-@page "/memory-config"
-@using Microsoft.Extensions.Configuration
-@inject IConfiguration Configuration
+:::moniker range=">= aspnetcore-7.0"
 
-<h1>Memory configuration example</h1>
+:::code language="razor" source="~/../blazor-samples/7.0/BlazorSample_WebAssembly/Pages/configuration/MemoryConfig.razor":::
 
-<h2>General specifications</h2>
+:::moniker-end
 
-<ul>
-    <li>Color: @Configuration["color"]</li>
-    <li>Type: @Configuration["type"]</li>
-</ul>
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
 
-<h2>Wheels</h2>
+:::code language="razor" source="~/../blazor-samples/6.0/BlazorSample_WebAssembly/Pages/configuration/MemoryConfig.razor":::
 
-<ul>
-    <li>Count: @Configuration["wheels:count"]</li>
-    <li>Brand: @Configuration["wheels:brand"]</li>
-    <li>Type: @Configuration["wheels:brand:type"]</li>
-    <li>Year: @Configuration["wheels:year"]</li>
-</ul>
-```
+:::moniker-end
+
+:::moniker range=">= aspnetcore-5.0 < aspnetcore-6.0"
+
+:::code language="razor" source="~/../blazor-samples/5.0/BlazorSample_WebAssembly/Pages/configuration/MemoryConfig.razor":::
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-5.0"
+
+:::code language="razor" source="~/../blazor-samples/3.1/BlazorSample_WebAssembly/Pages/configuration/MemoryConfig.razor":::
+
+:::moniker-end
 
 Obtain a section of the configuration in C# code with <xref:Microsoft.Extensions.Configuration.IConfiguration.GetSection%2A?displayProperty=nameWithType>. The following example obtains the `wheels` section for the configuration in the preceding example:
 
@@ -171,9 +223,7 @@ Provide authentication configuration in an app settings file.
 }
 ```
 
-Load the configuration for an Identity provider with <xref:Microsoft.Extensions.Configuration.ConfigurationBinder.Bind%2A?displayProperty=nameWithType> in `Program.Main`. The following example loads configuration for an [OIDC provider](xref:blazor/security/webassembly/standalone-with-authentication-library).
-
-`Program.cs`:
+Load the configuration for an Identity provider with <xref:Microsoft.Extensions.Configuration.ConfigurationBinder.Bind%2A?displayProperty=nameWithType> in the `Program` file. The following example loads configuration for an [OIDC provider](xref:blazor/security/webassembly/standalone-with-authentication-library):
 
 ```csharp
 builder.Services.AddOidcAuthentication(options =>
@@ -182,7 +232,13 @@ builder.Services.AddOidcAuthentication(options =>
 
 ## Logging configuration
 
-Add a package reference for [`Microsoft.Extensions.Logging.Configuration`](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Configuration) to the app's project file. In the app settings file, provide logging configuration. The logging configuration is loaded in `Program.Main`.
+*This section applies to apps that configure logging via an app settings file in the `wwwroot` folder.*
+
+Add the [`Microsoft.Extensions.Logging.Configuration`](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Configuration) package to the app.
+
+[!INCLUDE[](~/includes/package-reference.md)]
+
+In the app settings file, provide logging configuration. The logging configuration is loaded in the `Program` file.
 
 `wwwroot/appsettings.json`:
 
@@ -191,20 +247,13 @@ Add a package reference for [`Microsoft.Extensions.Logging.Configuration`](https
   "Logging": {
     "LogLevel": {
       "Default": "Information",
-      "Microsoft": "Warning",
-      "Microsoft.Hosting.Lifetime": "Information"
+      "Microsoft.AspNetCore": "Warning"
     }
   }
 }
 ```
 
-Add the namespace for <xref:Microsoft.Extensions.Logging?displayProperty=fullName> to `Program.cs`:
-
-```csharp
-using Microsoft.Extensions.Logging;
-```
-
-In `Program.Main` of `Program.cs`:
+In the `Program` file:
 
 ```csharp
 builder.Logging.AddConfiguration(
@@ -213,9 +262,7 @@ builder.Logging.AddConfiguration(
 
 ## Host builder configuration
 
-Read host builder configuration from <xref:Microsoft.AspNetCore.Components.WebAssembly.Hosting.WebAssemblyHostBuilder.Configuration?displayProperty=nameWithType> in `Program.Main`.
-
-In `Program.Main` of `Program.cs`:
+Read host builder configuration from <xref:Microsoft.AspNetCore.Components.WebAssembly.Hosting.WebAssemblyHostBuilder.Configuration?displayProperty=nameWithType> in the `Program` file:
 
 ```csharp
 var hostname = builder.Configuration["HostName"];
@@ -229,3 +276,18 @@ Configuration files are cached for offline use. With [Progressive Web Applicatio
 * The PWA's `service-worker.js` and `service-worker-assets.js` files must be rebuilt on compilation, which signal to the app on the user's next online visit that the app has been redeployed.
 
 For more information on how background updates are handled by PWAs, see <xref:blazor/progressive-web-app#background-updates>.
+
+## Options configuration
+
+[Options configuration](xref:fundamentals/configuration/options) requires adding a package reference for the [`Microsoft.Extensions.Options.ConfigurationExtensions`](https://www.nuget.org/packages/Microsoft.Extensions.Options.ConfigurationExtensions) NuGet package.
+
+[!INCLUDE[](~/includes/package-reference.md)]
+
+Example:
+
+```csharp
+builder.Services.Configure<MyOptions>(
+    builder.Configuration.GetSection("MyOptions"));
+```
+
+Not all of the ASP.NET Core Options features are supported in Razor components. For example, <xref:Microsoft.Extensions.Options.IOptionsSnapshot%601> and <xref:Microsoft.Extensions.Options.IOptionsMonitor%601> configuration is supported, but recomputing option values for these interfaces isn't supported outside of reloading the app by either requesting the app in a new browser tab or selecting the browser's reload button. Merely calling [`StateHasChanged`](xref:blazor/components/lifecycle#state-changes-statehaschanged) doesn't update snapshot or monitored option values when the underlying configuration changes.

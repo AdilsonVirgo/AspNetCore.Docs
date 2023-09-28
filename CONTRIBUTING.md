@@ -1,6 +1,6 @@
 # Contribute to the ASP.NET Core documentation
 
-This document covers the process for contributing to the articles and code samples that are hosted on the [ASP.NET documentation site](https://docs.microsoft.com/aspnet/). Typo corrections and new articles are welcome contributions.
+This document covers the process for contributing to the articles and code samples that are hosted on the [ASP.NET documentation site](https://learn.microsoft.com/aspnet/). Typo corrections and new articles are welcome contributions.
 
 ## How to make a simple correction or suggestion
 
@@ -16,15 +16,15 @@ You need a basic understanding of [Git and GitHub.com](https://guides.github.com
 * If your PR has the label 'cla-required' assigned, [complete the Contribution License Agreement (CLA)](https://cla.dotnetfoundation.org/).
 * Respond to PR feedback.
 
-For an example where this process led to publication of a new article, see [Issue 1477](https://github.com/dotnet/docs/issues/1477) and [Pull Request 18955](https://github.com/dotnet/docs/pull/18955) in the .NET Docs repository. The new article is [Use code coverage for unit testing](/dotnet/core/testing/unit-testing-code-coverage).
+For an example where this process led to publication of a new article, see [Issue 1477](https://github.com/dotnet/docs/issues/1477) and [Pull Request 18955](https://github.com/dotnet/docs/pull/18955) in the .NET Docs repository. The new article is [Use code coverage for unit testing](https://learn.microsoft.com/dotnet/core/testing/unit-testing-code-coverage).
 
-## Docs Authoring Pack extension in Visual Studio Code
+## Learn Authoring Pack extension in Visual Studio Code
 
-If you use Visual Studio Code to contribute to the ASP.NET documentation, you can boost your productivity by installing the [Docs Authoring Pack](https://marketplace.visualstudio.com/items?itemName=docsmsft.docs-authoring-pack) extension. The extension provides a variety of tools that helps with Markdown linting, code spell checking, and article templates.
+If you use Visual Studio Code to contribute to the ASP.NET documentation, you can boost your productivity by installing the [Learn Authoring Pack](https://marketplace.visualstudio.com/items?itemName=docsmsft.docs-authoring-pack) extension. The extension provides a variety of tools that helps with Markdown linting, code spell checking, and article templates.
 
 ## Markdown syntax
 
-Articles are written in [DocFx-flavored Markdown](https://dotnet.github.io/docfx/spec/docfx_flavored_markdown.html), which is a superset of [GitHub-flavored Markdown (GFM)](https://guides.github.com/features/mastering-markdown/). For examples of DFM syntax for UI features commonly used in the ASP.NET documentation, see [Metadata and Markdown Template](https://github.com/dotnet/docs/blob/main/styleguide/template.md) in the .NET Docs repo style guide. 
+Articles are written in [DocFx-flavored Markdown](https://dotnet.github.io/docfx/spec/docfx_flavored_markdown.html), which is a superset of [GitHub-flavored Markdown (GFM)](https://guides.github.com/features/mastering-markdown/). For examples of DFM syntax for UI features commonly used in the ASP.NET documentation, see [Metadata and Markdown template](/contribute/content/dotnet/dotnet-style-guide). 
 
 ## Folder structure conventions
 
@@ -46,7 +46,7 @@ Internal links should use the `uid` of the target article with an xref link (lin
 <xref:uid_of_the_topic>
 ```
 
-If the title of the article is unsuitable for link text (for example, a word or phrase in a sentence is the link text), specify the xref link and link text with the following:
+If the title of the article isn't intended for use in link text (for example, a word or phrase in a sentence is the link text), specify the xref link and link text with the following:
 
 ```md
 [link text](xref:uid_of_the_topic)
@@ -80,11 +80,11 @@ To render an entire code file as a snippet:
 To render a portion of a file as a snippet by using line numbers:
 
 ```md
-[!code-csharp[](configuration/index/sample/Program.cs?range=1-10,20,30,40-50]
-[!code-html[](configuration/index/sample/Views/Home/Index.cshtml?range=1-10,20,30,40-50]
+[!code-csharp[](configuration/index/sample/Program.cs?range=1-10,20,30,40-50)]
+[!code-html[](configuration/index/sample/Views/Home/Index.cshtml?range=1-10,20,30,40-50)]
 ```
 
-For C# snippets, reference a [C# region](https://docs.microsoft.com/dotnet/csharp/language-reference/preprocessor-directives/preprocessor-region). Whenever possible, use regions rather than line numbers because line numbers in a code file tend to change and become out of sync with line number references in Markdown. C# regions can be nested. If referencing the outer region, the inner `#region` and `#endregion` directives aren't rendered in a snippet. 
+For C# snippets, reference a [C# region](https://learn.microsoft.com/dotnet/csharp/language-reference/preprocessor-directives/preprocessor-region). Whenever possible, use regions rather than line numbers because line numbers in a code file tend to change and become out of sync with line number references in Markdown. C# regions can be nested. If referencing the outer region, the inner `#region` and `#endregion` directives aren't rendered in a snippet. 
 
 To render a C# region named "snippet_Example":
 
@@ -96,14 +96,53 @@ To highlight selected lines in a rendered snippet (usually renders as yellow bac
 
 ```md
 [!code-csharp[](configuration/index/sample/Program.cs?name=snippet_Example&highlight=1-3,10,20-25)]
-[!code-csharp[](configuration/index/sample/Program.cs?range=10-20&highlight=1-3]
-[!code-html[](configuration/index/sample/Views/Home/Index.cshtml?range=10-20&highlight=1-3]
-[!code-javascript[](configuration/index/sample/UsingOptionsSample.csproj?range=10-20&highlight=1-3]
+[!code-csharp[](configuration/index/sample/Program.cs?range=10-20&highlight=1-3)]
+[!code-html[](configuration/index/sample/Views/Home/Index.cshtml?range=10-20&highlight=1-3)]
+[!code-javascript[](configuration/index/sample/UsingOptionsSample.csproj?range=10-20&highlight=1-3)]
+```
+
+When highlighting lines within regions, use line numbers (or a range of line numbers) relative to the snippet's `#region` directive, as seen in the following example.
+
+The following partial C# code (`Movie.cs`) example includes a region named `FinalSnippet` with three `using` statements:
+
+```csharp
+        ...
+        public decimal Price { get; set; }
+        public string? Rating {  get; set; }
+    }
+}
+#endregion
+#endif
+#if Final
+#region FinalSnippet
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace MvcMovie.Models
+{
+    public class Movie
+    {
+        public int Id { get; set; }
+
+        ...
+    }
+}
+#endregion
+#endif
+```
+
+To highlight the three `using` statements from the preceding example, specify a `highlight` property in the query string with a value of `1-3`.
+
+Markdown:
+
+```md
+[!code-csharp[](sample/MvcMovie60/Models/Movie.cs?name=FinalSnippet&highlight=1-3)]
 ```
 
 ## Test changes with DocFX
 
-Test your changes with the [DocFX command-line tool](https://dotnet.github.io/docfx/tutorial/docfx_getting_started.html#2-use-docfx-as-a-command-line-tool), which creates a locally hosted version of the site. DocFX doesn't render style and site extensions created for docs.microsoft.com.
+Test your changes with the [DocFX command-line tool](https://dotnet.github.io/docfx/tutorial/docfx_getting_started.html#2-use-docfx-as-a-command-line-tool), which creates a locally hosted version of the site. DocFX doesn't render style and site extensions created for Microsoft Docs.
 
 DocFX requires:
 
@@ -153,7 +192,7 @@ Our goal is to write documentation that is easily understandable by the widest p
 
 ## Microsoft Writing Style Guide
 
-The [Microsoft Writing Style Guide](https://docs.microsoft.com/style-guide/welcome/) provides writing style and terminology guidance for all forms of technology communication, including the ASP.NET Core documentation.
+The [Microsoft Writing Style Guide](https://learn.microsoft.com/style-guide/welcome/) provides writing style and terminology guidance for all forms of technology communication, including the ASP.NET Core documentation.
 
 ## Redirects
 

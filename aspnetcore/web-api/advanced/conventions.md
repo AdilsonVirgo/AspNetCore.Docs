@@ -1,26 +1,27 @@
 ---
 title: Use web API conventions
-author: pranavkm
+author: tdykstra
 description: Learn about web API conventions in ASP.NET Core.
-monikerRange: '>= aspnetcore-2.2'
-ms.author: scaddie
+monikerRange: '>= aspnetcore-3.1'
+ms.author: riande
 ms.custom: mvc
 ms.date: 12/05/2019
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: web-api/advanced/conventions
 ---
 # Use web API conventions
 
-By [Pranav Krishnamoorthy](https://github.com/pranavkm) and [Scott Addie](https://github.com/scottaddie)
-
-ASP.NET Core 2.2 and later includes a way to extract common [API documentation](xref:tutorials/web-api-help-pages-using-swagger) and apply it to multiple actions, controllers, or all controllers within an assembly. Web API conventions are a substitute for decorating individual actions with [`[ProducesResponseType]`](xref:Microsoft.AspNetCore.Mvc.ProducesResponseTypeAttribute).
+Common [API documentation](xref:tutorials/web-api-help-pages-using-swagger) can be extracted and applied to multiple actions, controllers, or all controllers within an assembly. Web API conventions are a substitute for decorating individual actions with [`[ProducesResponseType]`](xref:Microsoft.AspNetCore.Mvc.ProducesResponseTypeAttribute).
 
 A convention allows you to:
 
 * Define the most common return types and status codes returned from a specific type of action.
 * Identify actions that deviate from the defined standard.
 
-ASP.NET Core MVC 2.2 and later includes a set of default conventions in <xref:Microsoft.AspNetCore.Mvc.DefaultApiConventions?displayProperty=fullName>. The conventions are based on the controller (*ValuesController.cs*) provided in the ASP.NET Core **API** project template. If your actions follow the patterns in the template, you should be successful using the default conventions. If the default conventions don't meet your needs, see [Create web API conventions](#create-web-api-conventions).
+Default conventions are available from <xref:Microsoft.AspNetCore.Mvc.DefaultApiConventions?displayProperty=fullName>. The conventions are demonstrated with the `ValuesController.cs` added to an **API** project template:
+
+[!code-csharp[](conventions/ValuesController.cs)]
+
+Actions that follow the patterns in the `ValuesController.cs` work with the default conventions. If the default conventions don't meet your needs, see [Create web API conventions](#create-web-api-conventions).
 
 At runtime, <xref:Microsoft.AspNetCore.Mvc.ApiExplorer> understands conventions. `ApiExplorer` is MVC's abstraction to communicate with [OpenAPI](https://www.openapis.org/) (also known as Swagger) document generators. Attributes from the applied convention are associated with an action and are included in the action's OpenAPI documentation. [API analyzers](xref:web-api/advanced/analyzers) also understand conventions. If your action is unconventional (for example, it returns a status code that isn't documented by the applied convention), a warning encourages you to document the status code.
 
@@ -53,7 +54,7 @@ Conventions don't compose; each action may be associated with exactly one conven
 
     [!code-csharp[](conventions/sample/Controllers/ContactsConventionController.cs?name=snippet_ApiConventionTypeAttribute&highlight=2)]
 
-1. `Microsoft.AspNetCore.Mvc.ApiConventionTypeAttribute` applied to an assembly &mdash; Applies the specified convention type to all controllers in the current assembly. As a recommendation, apply assembly-level attributes in the *Startup.cs* file.
+1. `Microsoft.AspNetCore.Mvc.ApiConventionTypeAttribute` applied to an assembly &mdash; Applies the specified convention type to all controllers in the current assembly. As a recommendation, apply assembly-level attributes in the `Startup.cs` file.
 
     In the following example, the default set of conventions is applied to all controllers in the assembly:
 
@@ -107,5 +108,7 @@ In the preceding example:
 
 ## Additional resources
 
+* [Video: Create metadata for NSwagClient](/shows/beginners-series-to-web-apis/generating-api-clients-17-of-18--beginners-series-to-web-apis)
+* [Video: Beginner's Series to: Web APIs](/shows/beginners-series-to-web-apis/)
 * <xref:web-api/advanced/analyzers>
 * <xref:tutorials/web-api-help-pages-using-swagger>

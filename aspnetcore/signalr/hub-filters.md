@@ -6,7 +6,6 @@ monikerRange: '>= aspnetcore-5.0'
 ms.author: brecon
 ms.custom: mvc
 ms.date: 05/22/2020
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: signalr/hub-filters
 ---
 
@@ -119,7 +118,7 @@ For this example, assume a `LanguageFilterAttribute` class is defined. The class
     ```csharp
     public class ChatHub
     {
-        [LanguageFilter(filterArgument: 0)]
+        [LanguageFilter(filterArgument = 0)]
         public async Task SendMessage(string message, string username)
         {
             await Clients.All.SendAsync("SendMessage", $"{username} says: {message}");
@@ -149,7 +148,7 @@ For this example, assume a `LanguageFilterAttribute` class is defined. The class
                     str = str.Replace(bannedPhrase, "***");
                 }
 
-                arguments = invocationContext.HubMethodArguments.ToArray();
+                var arguments = invocationContext.HubMethodArguments.ToArray();
                 arguments[languageFilter.FilterArgument] = str;
                 invocationContext = new HubInvocationContext(invocationContext.Context,
                     invocationContext.ServiceProvider,

@@ -6,7 +6,6 @@ monikerRange: '>= aspnetcore-2.1'
 ms.author: bradyg
 ms.custom: mvc
 ms.date: 11/12/2019
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: signalr/redis-backplane
 ---
 
@@ -21,7 +20,7 @@ This article explains SignalR-specific aspects of setting up a [Redis](https://r
 * Deploy a Redis server.
 
   > [!IMPORTANT] 
-  > For production use, a Redis backplane is recommended only when it runs in the same data center as the SignalR app. Otherwise, network latency degrades performance. If your SignalR app is running in the Azure cloud, we recommend Azure SignalR Service instead of a Redis backplane. You can use the Azure Redis Cache Service for development and test environments.
+  > For production use, a Redis backplane is recommended only when it runs in the same data center as the SignalR app. Otherwise, network latency degrades performance. If your SignalR app is running in the Azure cloud, we recommend Azure SignalR Service instead of a Redis backplane. 
 
   For more information, see the following resources:
 
@@ -29,7 +28,7 @@ This article explains SignalR-specific aspects of setting up a [Redis](https://r
   * [Redis documentation](https://redis.io/)
   * [Azure Redis Cache documentation](/azure/redis-cache/)
 
-::: moniker range="= aspnetcore-2.1"
+:::moniker range="= aspnetcore-2.1"
 
 * In the SignalR app, install the `Microsoft.AspNetCore.SignalR.Redis` NuGet package.
 * In the `Startup.ConfigureServices` method, call `AddRedis` after `AddSignalR`:
@@ -53,9 +52,9 @@ This article explains SignalR-specific aspects of setting up a [Redis](https://r
 
   In the preceding code, `options.Configuration` is initialized with whatever was specified in the connection string.
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="= aspnetcore-2.2"
+:::moniker range="= aspnetcore-2.2"
 
 * In the SignalR app, install one of the following NuGet packages:
 
@@ -89,9 +88,9 @@ This article explains SignalR-specific aspects of setting up a [Redis](https://r
 
   For information about Redis options, see the [StackExchange Redis documentation](https://stackexchange.github.io/StackExchange.Redis/Configuration.html).
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range=">= aspnetcore-3.0"
+:::moniker range=">= aspnetcore-3.0"
 
 * In the SignalR app, install the following NuGet package:
 
@@ -105,7 +104,7 @@ This article explains SignalR-specific aspects of setting up a [Redis](https://r
   
 * Configure options as needed:
  
-  Most options can be set in the connection string or in the [ConfigurationOptions](https://stackexchange.github.io/StackExchange.Redis/Configuration#configuration-options) object. Options specified in `ConfigurationOptions` override the ones set in the connection string.
+  Most options can be set in the connection string or in the [`ConfigurationOptions`](https://stackexchange.github.io/StackExchange.Redis/Configuration#configuration-options) object. Options specified in `ConfigurationOptions` override the ones set in the connection string.
 
   The following example shows how to set options in the `ConfigurationOptions` object. This example adds a channel prefix so that multiple apps can share the same Redis instance, as explained in the following step.
 
@@ -120,7 +119,7 @@ This article explains SignalR-specific aspects of setting up a [Redis](https://r
 
   For information about Redis options, see the [StackExchange Redis documentation](https://stackexchange.github.io/StackExchange.Redis/Configuration.html).
 
-::: moniker-end
+:::moniker-end
 
 * If you're using one Redis server for multiple SignalR apps, use a different channel prefix for each SignalR app.
 
@@ -131,7 +130,6 @@ This article explains SignalR-specific aspects of setting up a [Redis](https://r
   * [IIS](/iis/extensions/configuring-application-request-routing-arr/http-load-balancing-using-application-request-routing)
   * [HAProxy](https://www.haproxy.com/blog/load-balancing-affinity-persistence-sticky-sessions-what-you-need-to-know/)
   * [Nginx](https://docs.nginx.com/nginx/admin-guide/load-balancer/http-load-balancer/#sticky)
-  * [pfSense](https://www.netgate.com/docs/pfsense/loadbalancing/inbound-load-balancing.html#sticky-connections)
 
 ## Redis server errors
 
@@ -149,7 +147,7 @@ SignalR automatically reconnects when the Redis server is available again.
 
 Here's an example that shows how to handle Redis connection failure events.
 
-::: moniker range="= aspnetcore-2.1"
+:::moniker range="= aspnetcore-2.1"
 
 ```csharp
 services.AddSignalR()
@@ -179,9 +177,9 @@ services.AddSignalR()
         });
 ```
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="> aspnetcore-2.1"
+:::moniker range="> aspnetcore-2.1"
 
 ```csharp
 services.AddSignalR()
@@ -212,11 +210,18 @@ services.AddSignalR()
         });
 ```
 
-::: moniker-end
+:::moniker-end
 
-## Redis Clustering
+## Redis Cluster
 
-[Redis Clustering](https://redis.io/topics/cluster-spec) is a method for achieving high availability by using multiple Redis servers. Clustering isn't officially supported, but it might work.
+[Redis Cluster](https://redis.io/topics/cluster-spec) utilizes multiple simultaneously active Redis servers to achieve high availability. When Redis Cluster is used as the backplane for SignalR, messages are delivered to all of the nodes of the cluster without code modifications to the app.
+
+There's a tradeoff between the number of nodes in the cluster and the throughput of the backplane. Increasing the number of nodes increases the availability of the cluster but decreases the throughput because messages must be transmitted to all of the nodes in the cluster.
+
+In the SignalR app, include all of the possible Redis nodes using either of the following approaches:
+
+* List the nodes in the connection string delimited with commas.
+* If using custom behavior for connection failures, add the nodes to [`ConfigurationOptions.Endpoints`](https://stackexchange.github.io/StackExchange.Redis/Configuration#configuration-options).
 
 ## Next steps
 

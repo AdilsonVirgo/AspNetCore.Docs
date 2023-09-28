@@ -1,27 +1,26 @@
 ---
 title: Background tasks with hosted services in ASP.NET Core
-author: rick-anderson
+author: tdykstra
 description: Learn how to implement background tasks with hosted services in ASP.NET Core.
-monikerRange: '>= aspnetcore-2.1'
+monikerRange: '>= aspnetcore-3.1'
 ms.author: riande
 ms.custom: mvc
-ms.date: 02/10/2020
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 5/17/2023
 uid: fundamentals/host/hosted-services
 ---
 # Background tasks with hosted services in ASP.NET Core
 
 By [Jeow Li Huan](https://github.com/huan086)
 
-::: moniker range=">= aspnetcore-3.0"
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
-In ASP.NET Core, background tasks can be implemented as *hosted services*. A hosted service is a class with background task logic that implements the <xref:Microsoft.Extensions.Hosting.IHostedService> interface. This topic provides three hosted service examples:
+:::moniker range=">= aspnetcore-8.0"
+
+In ASP.NET Core, background tasks can be implemented as *hosted services*. A hosted service is a class with background task logic that implements the <xref:Microsoft.Extensions.Hosting.IHostedService> interface. This article provides three hosted service examples:
 
 * Background task that runs on a timer.
 * Hosted service that activates a [scoped service](xref:fundamentals/dependency-injection#service-lifetimes). The scoped service can use [dependency injection (DI)](xref:fundamentals/dependency-injection).
 * Queued background tasks that run sequentially.
-
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/host/hosted-services/samples/) ([how to download](xref:index#how-to-download-a-sample))
 
 ## Worker Service template
 
@@ -33,11 +32,11 @@ The ASP.NET Core Worker Service template provides a starting point for writing l
 
 To use the template as a basis for a hosted services app:
 
-[!INCLUDE[](~/includes/worker-template-instructions.md)]
+[!INCLUDE[](~/includes/worker-template-instructions-net6.md)]
 
 ## Package
 
-An app based on the Worker Service template uses the `Microsoft.NET.Sdk.Worker` SDK and has an explicit package reference to the [Microsoft.Extensions.Hosting](https://www.nuget.org/packages/Microsoft.Extensions.Hosting) package. For example, see the sample app's project file (*BackgroundTasksSample.csproj*).
+An app based on the Worker Service template uses the `Microsoft.NET.Sdk.Worker` SDK and has an explicit package reference to the [Microsoft.Extensions.Hosting](https://www.nuget.org/packages/Microsoft.Extensions.Hosting) package. For example, see the sample app's project file (`BackgroundTasksSample.csproj`).
 
 For web apps that use the `Microsoft.NET.Sdk.Web` SDK, the [Microsoft.Extensions.Hosting](https://www.nuget.org/packages/Microsoft.Extensions.Hosting) package is referenced implicitly from the shared framework. An explicit package reference in the app's project file isn't required.
 
@@ -45,53 +44,35 @@ For web apps that use the `Microsoft.NET.Sdk.Web` SDK, the [Microsoft.Extensions
 
 The <xref:Microsoft.Extensions.Hosting.IHostedService> interface defines two methods for objects that are managed by the host:
 
-* [StartAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.IHostedService.StartAsync*): `StartAsync` contains the logic to start the background task. `StartAsync` is called *before*:
+* [StartAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.IHostedService.StartAsync%2A)
+* [StopAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.IHostedService.StopAsync%2A)
 
-  * The app's request processing pipeline is configured (`Startup.Configure`).
-  * The server is started and [IApplicationLifetime.ApplicationStarted](xref:Microsoft.AspNetCore.Hosting.IApplicationLifetime.ApplicationStarted*) is triggered.
+### `StartAsync`
 
-  The default behavior can be changed so that the hosted service's `StartAsync` runs after the app's pipeline has been configured and `ApplicationStarted` is called. To change the default behavior, add the hosted service (`VideosWatcher` in the following example) after calling `ConfigureWebHostDefaults`:
+[StartAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.IHostedService.StartAsync%2A) contains the logic to start the background task. `StartAsync` is called *before*:
 
-  ```csharp
-  using Microsoft.AspNetCore.Hosting;
-  using Microsoft.Extensions.DependencyInjection;
-  using Microsoft.Extensions.Hosting;
+* The app's request processing pipeline is configured.
+* The server is started and [IApplicationLifetime.ApplicationStarted](xref:Microsoft.AspNetCore.Hosting.IApplicationLifetime.ApplicationStarted%2A) is triggered.
 
-  public class Program
-  {
-      public static void Main(string[] args)
-      {
-          CreateHostBuilder(args).Build().Run();
-      }
+`StartAsync` should be limited to short running tasks because hosted services are run sequentially, and no further services are started until `StartAsync` runs to completion.
 
-      public static IHostBuilder CreateHostBuilder(string[] args) =>
-          Host.CreateDefaultBuilder(args)
-              .ConfigureWebHostDefaults(webBuilder =>
-              {
-                  webBuilder.UseStartup<Startup>();
-              })
-              .ConfigureServices(services =>
-              {
-                  services.AddHostedService<VideosWatcher>();
-              });
-  }
-  ```
+### `StopAsync`
 
-* [StopAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.IHostedService.StopAsync*): Triggered when the host is performing a graceful shutdown. `StopAsync` contains the logic to end the background task. Implement <xref:System.IDisposable> and [finalizers (destructors)](/dotnet/csharp/programming-guide/classes-and-structs/destructors) to dispose of any unmanaged resources.
+* [StopAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.IHostedService.StopAsync%2A) is triggered when the host is performing a graceful shutdown. `StopAsync` contains the logic to end the background task. Implement <xref:System.IDisposable> and [finalizers (destructors)](/dotnet/csharp/programming-guide/classes-and-structs/destructors) to dispose of any unmanaged resources.
 
-  The cancellation token has a default five second timeout to indicate that the shutdown process should no longer be graceful. When cancellation is requested on the token:
+The cancellation token has a default 30 second timeout to indicate that the shutdown process should no longer be graceful. When cancellation is requested on the token:
 
-  * Any remaining background operations that the app is performing should be aborted.
-  * Any methods called in `StopAsync` should return promptly.
+* Any remaining background operations that the app is performing should be aborted.
+* Any methods called in `StopAsync` should return promptly.
 
-  However, tasks aren't abandoned after cancellation is requested&mdash;the caller awaits all tasks to complete.
+However, tasks aren't abandoned after cancellation is requested&mdash;the caller awaits all tasks to complete.
 
-  If the app shuts down unexpectedly (for example, the app's process fails), `StopAsync` might not be called. Therefore, any methods called or operations conducted in `StopAsync` might not occur.
+If the app shuts down unexpectedly (for example, the app's process fails), `StopAsync` might not be called. Therefore, any methods called or operations conducted in `StopAsync` might not occur.
 
-  To extend the default five second shutdown timeout, set:
+To extend the default 30 second shutdown timeout, set:
 
-  * <xref:Microsoft.Extensions.Hosting.HostOptions.ShutdownTimeout*> when using Generic Host. For more information, see <xref:fundamentals/host/generic-host#shutdown-timeout>.
-  * Shutdown timeout host configuration setting when using Web Host. For more information, see <xref:fundamentals/host/web-host#shutdown-timeout>.
+* <xref:Microsoft.Extensions.Hosting.HostOptions.ShutdownTimeout%2A> when using Generic Host. For more information, see <xref:fundamentals/host/generic-host#shutdowntimeout>.
+* Shutdown timeout host configuration setting when using Web Host. For more information, see <xref:fundamentals/host/web-host#shutdown-timeout>.
 
 The hosted service is activated once at app startup and gracefully shut down at app shutdown. If an error is thrown during background task execution, `Dispose` should be called even if `StopAsync` isn't called.
 
@@ -99,21 +80,23 @@ The hosted service is activated once at app startup and gracefully shut down at 
 
 <xref:Microsoft.Extensions.Hosting.BackgroundService> is a base class for implementing a long running <xref:Microsoft.Extensions.Hosting.IHostedService>.
 
-[ExecuteAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.BackgroundService.ExecuteAsync*) is called to run the background service. The implementation returns a <xref:System.Threading.Tasks.Task> that represents the entire lifetime of the background service. No further services are started until [ExecuteAsync becomes asynchronous](https://github.com/dotnet/extensions/issues/2149), such as by calling `await`. Avoid performing long, blocking initialization work in `ExecuteAsync`. The host blocks in [StopAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.BackgroundService.StopAsync*) waiting for `ExecuteAsync` to complete.
+[ExecuteAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.BackgroundService.ExecuteAsync%2A) is called to run the background service. The implementation returns a <xref:System.Threading.Tasks.Task> that represents the entire lifetime of the background service. No further services are started until [ExecuteAsync becomes asynchronous](https://github.com/dotnet/extensions/issues/2149), such as by calling `await`. Avoid performing long, blocking initialization work in `ExecuteAsync`. The host blocks in [StopAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.BackgroundService.StopAsync%2A) waiting for `ExecuteAsync` to complete.
 
-The cancellation token is triggered when [IHostedService.StopAsync](xref:Microsoft.Extensions.Hosting.IHostedService.StopAsync*) is called. Your implementation of `ExecuteAsync` should finish promptly when the cancellation token is fired in order to gracefully shut down the service. Otherwise, the service ungracefully shuts down at the shutdown timeout. For more information, see the [IHostedService interface](#ihostedservice-interface) section.
+The cancellation token is triggered when [IHostedService.StopAsync](xref:Microsoft.Extensions.Hosting.IHostedService.StopAsync%2A) is called. Your implementation of `ExecuteAsync` should finish promptly when the cancellation token is fired in order to gracefully shut down the service. Otherwise, the service ungracefully shuts down at the shutdown timeout. For more information, see the [IHostedService interface](#ihostedservice-interface) section.
+
+For more information, see the [BackgroundService](https://github.com/dotnet/runtime/blob/main/src/libraries/Microsoft.Extensions.Hosting.Abstractions/src/BackgroundService.cs) source code.
 
 ## Timed background tasks
 
 A timed background task makes use of the [System.Threading.Timer](xref:System.Threading.Timer) class. The timer triggers the task's `DoWork` method. The timer is disabled on `StopAsync` and disposed when the service container is disposed on `Dispose`:
 
-[!code-csharp[](hosted-services/samples/3.x/BackgroundTasksSample/Services/TimedHostedService.cs?name=snippet1&highlight=16-17,34,41)]
+:::code language="csharp" source="~/fundamentals/host/hosted-services/samples/6.0/BackgroundTasksSample/Services/TimedHostedService.cs" id="snippet1" highlight="16-17,34,41":::
 
-The <xref:System.Threading.Timer> doesn't wait for previous executions of `DoWork` to finish, so the approach shown might not be suitable for every scenario. [Interlocked.Increment](xref:System.Threading.Interlocked.Increment*) is used to increment the execution counter as an atomic operation, which ensures that multiple threads don't update `executionCount` concurrently.
+The <xref:System.Threading.Timer> doesn't wait for previous executions of `DoWork` to finish, so the approach shown might not be suitable for every scenario. [Interlocked.Increment](xref:System.Threading.Interlocked.Increment%2A) is used to increment the execution counter as an atomic operation, which ensures that multiple threads don't update `executionCount` concurrently.
 
-The service is registered in `IHostBuilder.ConfigureServices` (*Program.cs*) with the `AddHostedService` extension method:
+The service is registered in `IHostBuilder.ConfigureServices` (`Program.cs`) with the `AddHostedService` extension method:
 
-[!code-csharp[](hosted-services/samples/3.x/BackgroundTasksSample/Program.cs?name=snippet1)]
+:::code language="csharp" source="~/fundamentals/host/hosted-services/samples/6.0/BackgroundTasksSample/Program.cs" id="snippet1":::
 
 ## Consuming a scoped service in a background task
 
@@ -124,21 +107,21 @@ The scoped background task service contains the background task's logic. In the 
 * The service is asynchronous. The `DoWork` method returns a `Task`. For demonstration purposes, a delay of ten seconds is awaited in the `DoWork` method.
 * An <xref:Microsoft.Extensions.Logging.ILogger> is injected into the service.
 
-[!code-csharp[](hosted-services/samples/3.x/BackgroundTasksSample/Services/ScopedProcessingService.cs?name=snippet1)]
+:::code language="csharp" source="~/fundamentals/host/hosted-services/samples/6.0/BackgroundTasksSample/Services/ScopedProcessingService.cs" id="snippet1":::
 
 The hosted service creates a scope to resolve the scoped background task service to call its `DoWork` method. `DoWork` returns a `Task`, which is awaited in `ExecuteAsync`:
 
-[!code-csharp[](hosted-services/samples/3.x/BackgroundTasksSample/Services/ConsumeScopedServiceHostedService.cs?name=snippet1&highlight=19,22-35)]
+:::code language="csharp" source="~/fundamentals/host/hosted-services/samples/6.0/BackgroundTasksSample/Services/ConsumeScopedServiceHostedService.cs" id="snippet1" highlight="19,22-35":::
 
-The services are registered in `IHostBuilder.ConfigureServices` (*Program.cs*). The hosted service is registered with the `AddHostedService` extension method:
+The services are registered in `IHostBuilder.ConfigureServices` (`Program.cs`). The hosted service is registered with the `AddHostedService` extension method:
 
-[!code-csharp[](hosted-services/samples/3.x/BackgroundTasksSample/Program.cs?name=snippet2)]
+:::code language="csharp" source="~/fundamentals/host/hosted-services/samples/3.x/BackgroundTasksSample/Program.cs" id="snippet2":::
 
 ## Queued background tasks
 
-A background task queue is based on the .NET 4.x <xref:System.Web.Hosting.HostingEnvironment.QueueBackgroundWorkItem*>:
+A background task queue is based on the .NET 4.x <xref:System.Web.Hosting.HostingEnvironment.QueueBackgroundWorkItem%2A>:
 
-[!code-csharp[](hosted-services/samples/3.x/BackgroundTasksSample/Services/BackgroundTaskQueue.cs?name=snippet1)]
+:::code language="csharp" source="~/fundamentals/host/hosted-services/samples/6.0/BackgroundTasksSample/Services/BackgroundTaskQueue.cs" id="snippet1":::
 
 In the following `QueueHostedService` example:
 
@@ -146,7 +129,7 @@ In the following `QueueHostedService` example:
 * Background tasks in the queue are dequeued and executed in `BackgroundProcessing`.
 * Work items are awaited before the service stops in `StopAsync`.
 
-[!code-csharp[](hosted-services/samples/3.x/BackgroundTasksSample/Services/QueuedHostedService.cs?name=snippet1&highlight=28-29,33)]
+:::code language="csharp" source="~/fundamentals/host/hosted-services/samples/6.0/BackgroundTasksSample/Services/QueuedHostedService.cs" id="snippet1" highlight="28-29,33":::
 
 A `MonitorLoop` service handles enqueuing tasks for the hosted service whenever the `w` key is selected on an input device:
 
@@ -156,113 +139,86 @@ A `MonitorLoop` service handles enqueuing tasks for the hosted service whenever 
   * Three 5-second delays are executed (`Task.Delay`).
   * A `try-catch` statement traps <xref:System.OperationCanceledException> if the task is cancelled.
 
-[!code-csharp[](hosted-services/samples/3.x/BackgroundTasksSample/Services/MonitorLoop.cs?name=snippet_Monitor&highlight=7,33)]
+:::code language="csharp" source="~/fundamentals/host/hosted-services/samples/6.0/BackgroundTasksSample/Services/MonitorLoop.cs" id="snippet_Monitor" highlight="7,33":::
 
-The services are registered in `IHostBuilder.ConfigureServices` (*Program.cs*). The hosted service is registered with the `AddHostedService` extension method:
+The services are registered in `IHostBuilder.ConfigureServices` (`Program.cs`). The hosted service is registered with the `AddHostedService` extension method:
 
-[!code-csharp[](hosted-services/samples/3.x/BackgroundTasksSample/Program.cs?name=snippet3)]
+:::code language="csharp" source="~/fundamentals/host/hosted-services/samples/6.0/BackgroundTasksSample/Program.cs" id="snippet3":::
 
-`MonitorLoop` is started in `Program.Main`:
+`MonitorLoop` is started in `Program.cs`:
 
-[!code-csharp[](hosted-services/samples/3.x/BackgroundTasksSample/Program.cs?name=snippet4)]
+:::code language="csharp" source="~/fundamentals/host/hosted-services/samples/6.0/BackgroundTasksSample/Program.cs" id="snippet4":::
 
-::: moniker-end
+## Asynchronous timed background task
 
-::: moniker range="< aspnetcore-3.0"
+The following code creates an asynchronous timed background task:
 
-In ASP.NET Core, background tasks can be implemented as *hosted services*. A hosted service is a class with background task logic that implements the <xref:Microsoft.Extensions.Hosting.IHostedService> interface. This topic provides three hosted service examples:
+:::code language="csharp" source="~/../AspNetCore.Docs.Samples/fundamentals/host/TimedBackgroundTasks/TimedHostedService.cs":::
 
-* Background task that runs on a timer.
-* Hosted service that activates a [scoped service](xref:fundamentals/dependency-injection#service-lifetimes). The scoped service can use [dependency injection (DI)](xref:fundamentals/dependency-injection)
-* Queued background tasks that run sequentially.
+## Native AOT
 
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/host/hosted-services/samples/) ([how to download](xref:index#how-to-download-a-sample))
+The Worker Service templates support [.NET native ahead-of-time (AOT)](/dotnet/core/deploying/native-aot/) with the `--aot` flag:
 
-## Package
+# [Visual Studio](#tab/visual-studio)
 
-Reference the [Microsoft.AspNetCore.App metapackage](xref:fundamentals/metapackage-app) or add a package reference to the [Microsoft.Extensions.Hosting](https://www.nuget.org/packages/Microsoft.Extensions.Hosting) package.
+1. Create a new project.
+1. Select **Worker Service**. Select **Next**.
+1. Provide a project name in the **Project name** field or accept the default project name.  Select **Next**.
+1. In the **Additional information** dialog:
+  1. Choose a **Framework**.
+  1. Check the **Enable native AOT publish** checkbox.
+  1. Select **Create**.
 
-## IHostedService interface
+<!--
+# [Visual Studio for Mac](#tab/visual-studio-mac)
 
-Hosted services implement the <xref:Microsoft.Extensions.Hosting.IHostedService> interface. The interface defines two methods for objects that are managed by the host:
+1. Create a new project.
+1. Select **App** under **.NET Core** in the sidebar.
+1. Select **Worker** under **ASP.NET Core**. Select **Next**.
+1. Select **.NET Core 3.1** or later for the **Target Framework**. Select **Next**.
+1. Provide a name in the **Project Name** field. Select **Create**.
+-->
 
-* [StartAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.IHostedService.StartAsync*): `StartAsync` contains the logic to start the background task. When using the [Web Host](xref:fundamentals/host/web-host), `StartAsync` is called after the server has started and [IApplicationLifetime.ApplicationStarted](xref:Microsoft.AspNetCore.Hosting.IApplicationLifetime.ApplicationStarted*) is triggered. When using the [Generic Host](xref:fundamentals/host/generic-host), `StartAsync` is called before `ApplicationStarted` is triggered.
+# [.NET Core CLI](#tab/netcore-cli)
 
-* [StopAsync(CancellationToken)](xref:Microsoft.Extensions.Hosting.IHostedService.StopAsync*): Triggered when the host is performing a graceful shutdown. `StopAsync` contains the logic to end the background task. Implement <xref:System.IDisposable> and [finalizers (destructors)](/dotnet/csharp/programming-guide/classes-and-structs/destructors) to dispose of any unmanaged resources.
+Use the Worker Service (`worker`) template with the [dotnet new](/dotnet/core/tools/dotnet-new) command from a command shell with the AOT option:
 
-  The cancellation token has a default five second timeout to indicate that the shutdown process should no longer be graceful. When cancellation is requested on the token:
+```dotnetcli
+dotnet new worker -o WorkerWithAot --aot
+```
 
-  * Any remaining background operations that the app is performing should be aborted.
-  * Any methods called in `StopAsync` should return promptly.
+---
 
-  However, tasks aren't abandoned after cancellation is requested&mdash;the caller awaits all tasks to complete.
+The AOT option adds `<PublishAot>true</PublishAot>` to the project file:
 
-  If the app shuts down unexpectedly (for example, the app's process fails), `StopAsync` might not be called. Therefore, any methods called or operations conducted in `StopAsync` might not occur.
+```diff
 
-  To extend the default five second shutdown timeout, set:
+<Project Sdk="Microsoft.NET.Sdk.Worker">
 
-  * <xref:Microsoft.Extensions.Hosting.HostOptions.ShutdownTimeout*> when using Generic Host. For more information, see <xref:fundamentals/host/generic-host#shutdown-timeout>.
-  * Shutdown timeout host configuration setting when using Web Host. For more information, see <xref:fundamentals/host/web-host#shutdown-timeout>.
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
++   <PublishAot>true</PublishAot>
+    <UserSecretsId>dotnet-WorkerWithAot-e94b2</UserSecretsId>
+  </PropertyGroup>
 
-The hosted service is activated once at app startup and gracefully shut down at app shutdown. If an error is thrown during background task execution, `Dispose` should be called even if `StopAsync` isn't called.
-
-## Timed background tasks
-
-A timed background task makes use of the [System.Threading.Timer](xref:System.Threading.Timer) class. The timer triggers the task's `DoWork` method. The timer is disabled on `StopAsync` and disposed when the service container is disposed on `Dispose`:
-
-[!code-csharp[](hosted-services/samples/2.x/BackgroundTasksSample/Services/TimedHostedService.cs?name=snippet1&highlight=15-16,30,37)]
-
-The <xref:System.Threading.Timer> doesn't wait for previous executions of `DoWork` to finish, so the approach shown might not be suitable for every scenario.
-
-The service is registered in `Startup.ConfigureServices` with the `AddHostedService` extension method:
-
-[!code-csharp[](hosted-services/samples/2.x/BackgroundTasksSample/Startup.cs?name=snippet1)]
-
-## Consuming a scoped service in a background task
-
-To use [scoped services](xref:fundamentals/dependency-injection#service-lifetimes) within an `IHostedService`, create a scope. No scope is created for a hosted service by default.
-
-The scoped background task service contains the background task's logic. In the following example, an <xref:Microsoft.Extensions.Logging.ILogger> is injected into the service:
-
-[!code-csharp[](hosted-services/samples/2.x/BackgroundTasksSample/Services/ScopedProcessingService.cs?name=snippet1)]
-
-The hosted service creates a scope to resolve the scoped background task service to call its `DoWork` method:
-
-[!code-csharp[](hosted-services/samples/2.x/BackgroundTasksSample/Services/ConsumeScopedServiceHostedService.cs?name=snippet1&highlight=29-36)]
-
-The services are registered in `Startup.ConfigureServices`. The `IHostedService` implementation is registered with the `AddHostedService` extension method:
-
-[!code-csharp[](hosted-services/samples/2.x/BackgroundTasksSample/Startup.cs?name=snippet2)]
-
-## Queued background tasks
-
-A background task queue is based on the .NET Framework 4.x <xref:System.Web.Hosting.HostingEnvironment.QueueBackgroundWorkItem*> ([tentatively scheduled to be built-in for ASP.NET Core](https://github.com/aspnet/Hosting/issues/1280)):
-
-[!code-csharp[](hosted-services/samples/2.x/BackgroundTasksSample/Services/BackgroundTaskQueue.cs?name=snippet1)]
-
-In `QueueHostedService`, background tasks in the queue are dequeued and executed as a [BackgroundService](#backgroundservice-base-class), which is a base class for implementing a long running `IHostedService`:
-
-[!code-csharp[](hosted-services/samples/2.x/BackgroundTasksSample/Services/QueuedHostedService.cs?name=snippet1&highlight=21,25)]
-
-The services are registered in `Startup.ConfigureServices`. The `IHostedService` implementation is registered with the `AddHostedService` extension method:
-
-[!code-csharp[](hosted-services/samples/2.x/BackgroundTasksSample/Startup.cs?name=snippet3)]
-
-In the Index page model class:
-
-* The `IBackgroundTaskQueue` is injected into the constructor and assigned to `Queue`.
-* An <xref:Microsoft.Extensions.DependencyInjection.IServiceScopeFactory> is injected and assigned to `_serviceScopeFactory`. The factory is used to create instances of <xref:Microsoft.Extensions.DependencyInjection.IServiceScope>, which is used to create services within a scope. A scope is created in order to use the app's `AppDbContext` (a [scoped service](xref:fundamentals/dependency-injection#service-lifetimes)) to write database records in the `IBackgroundTaskQueue` (a singleton service).
-
-[!code-csharp[](hosted-services/samples/2.x/BackgroundTasksSample/Pages/Index.cshtml.cs?name=snippet1)]
-
-When the **Add Task** button is selected on the Index page, the `OnPostAddTask` method is executed. `QueueBackgroundWorkItem` is called to enqueue a work item:
-
-[!code-csharp[](hosted-services/samples/2.x/BackgroundTasksSample/Pages/Index.cshtml.cs?name=snippet2)]
-
-::: moniker-end
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0-preview.4.23259.5" />
+  </ItemGroup>
+</Project>
+```
 
 ## Additional resources
 
+* [Background services unit tests on GitHub](https://github.com/dotnet/runtime/blob/main/src/libraries/Microsoft.Extensions.Hosting/tests/UnitTests/BackgroundServiceTests.cs).
+* [View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/host/hosted-services/samples/) ([how to download](xref:index#how-to-download-a-sample))
 * [Implement background tasks in microservices with IHostedService and the BackgroundService class](/dotnet/standard/microservices-architecture/multi-container-microservice-net-applications/background-tasks-with-ihostedservice)
 * [Run background tasks with WebJobs in Azure App Service](/azure/app-service/webjobs-create)
 * <xref:System.Threading.Timer>
+
+:::moniker-end
+
+[!INCLUDE[](~/fundamentals/host/hosted-services/includes/hosted-services67.md)]
+[!INCLUDE[](~/fundamentals/host/hosted-services/includes/hosted-services5.md)]

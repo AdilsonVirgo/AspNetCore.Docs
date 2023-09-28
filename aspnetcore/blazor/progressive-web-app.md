@@ -1,17 +1,20 @@
 ---
-title: Build Progressive Web Applications with ASP.NET Core Blazor WebAssembly
+title: ASP.NET Core Blazor Progressive Web Application (PWA)
 author: guardrex
-description: Learn how to build a Blazor-based Progressive Web Application (PWA) that use modern browser features to behave like a desktop app.
+description: Learn how to build a Blazor Progressive Web Application (PWA) that use modern browser features to behave like a desktop app.
 monikerRange: '>= aspnetcore-3.1'
 ms.author: riande
 ms.custom: mvc
-ms.date: 01/11/2021
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 02/23/2023
 uid: blazor/progressive-web-app
 ---
-# Build Progressive Web Applications with ASP.NET Core Blazor WebAssembly
+# ASP.NET Core Blazor Progressive Web Application (PWA)
 
-A Progressive Web Application (PWA) is usually a Single Page Application (SPA) that uses modern browser APIs and capabilities to behave like a desktop app. Blazor WebAssembly is a standards-based client-side web app platform, so it can use any browser API, including PWA APIs required for the following capabilities:
+[!INCLUDE[](~/includes/not-latest-version.md)]
+
+A Blazor Progressive Web Application (PWA) is a single-page application (SPA) that uses modern browser APIs and capabilities to behave like a desktop app.
+
+Blazor WebAssembly is a standards-based client-side web app platform, so it can use any browser API, including PWA APIs required for the following capabilities:
 
 * Working offline and loading instantly, independent of network speed.
 * Running in its own app window, not just a browser window.
@@ -19,7 +22,7 @@ A Progressive Web Application (PWA) is usually a Single Page Application (SPA) t
 * Receiving push notifications from a backend server, even while the user isn't using the app.
 * Automatically updating in the background.
 
-The word *progressive* is used to describe such apps because:
+The word *progressive* is used to describe these apps because:
 
 * A user might first discover and use the app within their web browser like any other SPA.
 * Later, the user progresses to installing it in their OS and enabling push notifications.
@@ -28,15 +31,7 @@ The word *progressive* is used to describe such apps because:
 
 # [Visual Studio](#tab/visual-studio)
 
-When creating a new **Blazor WebAssembly App** in the **Create a New Project** dialog, select the **Progressive Web Application** check box:
-
-![The 'Progressive Web Application' check box is selected in the Visual Studio new project dialog.](progressive-web-app/_static/image1.png)
-
-<!--
-
-# [Visual Studio for Mac](#tab/visual-studio-mac)
-
--->
+When creating a new **Blazor WebAssembly App**, select the **Progressive Web Application** checkbox.
 
 # [Visual Studio Code / .NET Core CLI](#tab/visual-studio-code+netcore-cli)
 
@@ -50,7 +45,11 @@ In the preceding command, the `-o|--output` option creates a new folder for the 
 
 ---
 
-Optionally, PWA can be configured for an app created from the ASP.NET Core Hosted template. The PWA scenario is independent of the hosting model.
+:::moniker range="< aspnetcore-8.0"
+
+Optionally, PWA can be configured for an app created from the **ASP.NET Core Hosted** Blazor WebAssembly project template. The PWA scenario is independent of the hosting model.
+
+:::moniker-end
 
 ## Convert an existing Blazor WebAssembly app into a PWA
 
@@ -77,8 +76,6 @@ In the app's project file:
 
 To obtain static assets, use **one** of the following approaches:
 
-::: moniker range=">= aspnetcore-5.0"
-
 * Create a separate, new PWA project with the [`dotnet new`](/dotnet/core/tools/dotnet-new) command in a command shell:
 
   ```dotnetcli
@@ -87,42 +84,17 @@ To obtain static assets, use **one** of the following approaches:
   
   In the preceding command, the `-o|--output` option creates a new folder for the app named `MyBlazorPwa`.
   
-  **If you aren't converting an app for the latest release**, pass the `-f|--framework` option. The following example creates the app for ASP.NET Core version 3.1:
+  **If you aren't converting an app for the latest release**, pass the `-f|--framework` option. The following example creates the app for ASP.NET Core version 5.0:
   
   ```dotnetcli
-  dotnet new blazorwasm -o MyBlazorPwa --pwa -f netcoreapp3.1
+  dotnet new blazorwasm -o MyBlazorPwa --pwa -f net5.0
   ```
 
-* Navigate to the ASP.NET Core GitHub repository at the following URL, which links to `main` branch reference source and assets. Select the release that you're working with from the **Switch branches or tags** drop-down list that applies to your app.
+* Navigate to the ASP.NET Core GitHub repository at the following URL, which links to `main` branch reference source and assets. Select the release that you're working with from the **Switch branches or tags** dropdown list that applies to your app.
 
   [Blazor WebAssembly project template `wwwroot` folder (dotnet/aspnetcore GitHub repository `main` branch)](https://github.com/dotnet/aspnetcore/tree/main/src/ProjectTemplates/Web.ProjectTemplates/content/ComponentsWebAssembly-CSharp/Client/wwwroot)
 
-  [!INCLUDE[](~/blazor/includes/aspnetcore-repo-ref-source-links.md)]
-
-::: moniker-end
-
-::: moniker range="< aspnetcore-5.0"
-
-* Create a separate, new PWA project with the [`dotnet new`](/dotnet/core/tools/dotnet-new) command in a command shell. Pass the `-f|--framework` option to select the version. The following example creates the app for ASP.NET Core version 3.1:
-  
-  ```dotnetcli
-  dotnet new blazorwasm -o MyBlazorPwa --pwa -f netcoreapp3.1
-  ```
-  
-  In the preceding command, the `-o|--output` option creates a new folder for the app named `MyBlazorPwa`.
-
-* Navigate to the ASP.NET Core GitHub repository at the following URL, which links to 3.1 release reference source and assets:
-
-  [Blazor WebAssembly project template `wwwroot` folder (dotnet/aspnetcore GitHub repository `release 3.1` branch)](https://github.com/dotnet/aspnetcore/tree/release/3.1/src/ProjectTemplates/ComponentsWebAssembly.ProjectTemplates/content/ComponentsWebAssembly-CSharp/Client/wwwroot)
-
-  > [!NOTE]
-  > The URL for Blazor WebAssembly project template changed after the release of ASP.NET Core 3.1. Reference assets for any release are available from the ASP.NET Core reference source. Select the release that you're working with from the **Switch branches or tags** drop-down list that applies to your app.
-  >
-  > [Blazor WebAssembly project template `wwwroot` folder (dotnet/aspnetcore GitHub repository `main` branch)](https://github.com/dotnet/aspnetcore/tree/main/src/ProjectTemplates/Web.ProjectTemplates/content/ComponentsWebAssembly-CSharp/Client/wwwroot)
-  >
-  > [!INCLUDE[](~/blazor/includes/aspnetcore-repo-ref-source-links.md)]
-
-::: moniker-end
+  [!INCLUDE[](~/includes/aspnetcore-repo-ref-source-links.md)]
 
 From the source `wwwroot` folder either in the app that you created or from the reference assets in the `dotnet/aspnetcore` GitHub repository, copy the following files into the app's `wwwroot` folder:
 
@@ -152,13 +124,13 @@ In the app's `wwwroot/index.html` file:
 
 When visiting an app created using the PWA template, users have the option of installing the app into their OS's start menu, dock, or home screen. The way this option is presented depends on the user's browser. When using desktop Chromium-based browsers, such as Edge or Chrome, an **Add** button appears within the URL bar. After the user selects the **Add** button, they receive a confirmation dialog:
 
-![The confirmation dialog in Google Chrome presents an Install button to the user for the 'MyBlazorPwa' app.](progressive-web-app/_static/image2.png)
+![The confirmation dialog in Google Chrome presents an Install button to the user for the 'MyBlazorPwa' app.](~/blazor/progressive-web-app/_static/image2.png)
 
 On iOS, visitors can install the PWA using Safari's **Share** button and its **Add to Homescreen** option. On Chrome for Android, users should select the **Menu** button in the upper-right corner, followed by **Add to Home screen**.
 
 Once installed, the app appears in its own window without an address bar:
 
-![The 'MyBlazorPwa' app runs in Google Chrome without an address bar.](progressive-web-app/_static/image3.png)
+![The 'MyBlazorPwa' app runs in Google Chrome without an address bar.](~/blazor/progressive-web-app/_static/image3.png)
 
 To customize the window's title, color scheme, icon, or other details, see the `manifest.json` file in the project's `wwwroot` directory. The schema of this file is defined by web standards. For more information, see [MDN web docs: Web App Manifest](https://developer.mozilla.org/docs/Web/Manifest).
 
@@ -170,7 +142,7 @@ By default, apps created using the PWA template option have support for running 
 > Development support would interfere with the usual development cycle of making changes and testing them. Therefore, offline support is only enabled for *published* apps. 
 
 > [!WARNING]
-> If you intend to distribute an offline-enabled PWA, there are [several important warnings and caveats](#caveats-for-offline-pwas). These scenarios are inherent to offline PWAs and not specific to Blazor. Be sure to read and understand these caveats before making assumptions about how your offline-enabled app will work.
+> If you intend to distribute an offline-enabled PWA, there are [several important warnings and caveats](#caveats-for-offline-pwas). These scenarios are inherent to offline PWAs and not specific to Blazor. Be sure to read and understand these caveats before making assumptions about how your offline-enabled app works.
 
 To see how offline support works:
 
@@ -178,20 +150,20 @@ To see how offline support works:
 1. Deploy the app to a server that supports HTTPS, and access the app in a browser at its secure HTTPS address.
 1. Open the browser's dev tools and verify that a *Service Worker* is registered for the host on the **Application** tab:
 
-   ![Google Chrome developer tools 'Application' tab shows a Service Worker activated and running.](progressive-web-app/_static/image4.png)
+   ![Google Chrome developer tools 'Application' tab shows a Service Worker activated and running.](~/blazor/progressive-web-app/_static/image4.png)
 
 1. Reload the page and examine the **Network** tab. **Service Worker** or **memory cache** are listed as the sources for all of the page's assets:
 
-   ![Google Chrome developer tools 'Network' tab showing sources for all of the page's assets.](progressive-web-app/_static/image5.png)
+   ![Google Chrome developer tools 'Network' tab showing sources for all of the page's assets.](~/blazor/progressive-web-app/_static/image5.png)
 
 1. To verify that the browser isn't dependent on network access to load the app, either:
 
    * Shut down the web server and see how the app continues to function normally, which includes page reloads. Likewise, the app continues to function normally when there's a slow network connection.
    * Instruct the browser to simulate offline mode in the **Network** tab:
 
-   ![Google Chrome developer tools 'Network' tab with the browser mode drop down being changed from 'Online' to 'Offline'.](progressive-web-app/_static/image6.png)
+   ![Google Chrome developer tools 'Network' tab with the browser mode dropdown list changed from 'Online' to 'Offline'.](~/blazor/progressive-web-app/_static/image6.png)
 
-Offline support using a service worker is a web standard, not specific to Blazor. For more information on service workers, see [MDN web docs: Service Worker API](https://developer.mozilla.org/docs/Web/API/Service_Worker_API). To learn more about common usage patterns for service workers, see [Google Web: The Service Worker Lifecycle](https://developers.google.com/web/fundamentals/primers/service-workers/lifecycle).
+Offline support using a service worker is a web standard, not specific to Blazor. For more information on service workers, see [MDN web docs: Service Worker API](https://developer.mozilla.org/docs/Web/API/Service_Worker_API). To learn more about common usage patterns for service workers, see [Google Web: The Service Worker Lifecycle](https://web.dev/service-worker-lifecycle/).
 
 Blazor's PWA template produces two service worker files:
 
@@ -218,6 +190,14 @@ The cache-first strategy is valuable because:
 
 * **It ensures correctness.** When building a cache of offline resources, the service worker uses content hashing to guarantee it has fetched a complete and self-consistent snapshot of resources at a single instant in time. This cache is then used as an atomic unit. There's no point asking the network for newer resources, since the only versions required are the ones already cached. Anything else risks inconsistency and incompatibility (for example, trying to use versions of .NET assemblies that weren't compiled together).
 
+If you must prevent the browser from fetching `service-worker-assets.js` from its HTTP cache, for example to resolve temporary integrity check failures when deploying a new version of the service worker, update the service worker registration in `wwwroot/index.html` with [`updateViaCache`](https://developer.mozilla.org/docs/Web/API/ServiceWorkerRegistration/updateViaCache) set to 'none':
+
+```html
+<script>
+  navigator.serviceWorker.register('/service-worker.js', {updateViaCache: 'none'});
+</script>
+```
+
 ### Background updates
 
 As a mental model, you can think of an offline-first PWA as behaving like a mobile app that can be installed. The app starts up immediately regardless of network connectivity, but the installed app logic comes from a point-in-time snapshot that might not be the latest version.
@@ -236,7 +216,7 @@ Customize this process by editing the service worker logic. None of the precedin
 
 As described in the [Cache-first fetch strategy](#cache-first-fetch-strategy) section, the default service worker uses a *cache-first* strategy, meaning that it tries to serve cached content when available. If there is no content cached for a certain URL, for example when requesting data from a backend API, the service worker falls back on a regular network request. The network request succeeds if the server is reachable. This logic is implemented inside `onFetch` function within `service-worker.published.js`.
 
-If the app's Razor components rely on requesting data from backend APIs and you want to provide a friendly user experience for failed requests due to network unavailability, implement logic within the app's components. For example, use `try/catch` around <xref:System.Net.Http.HttpClient> requests.
+If the app's Razor components rely on requesting data from backend APIs and you want to provide a friendly user experience for failed requests due to network unavailability, implement logic within the app's components. For example, use [`try/catch`](/dotnet/csharp/language-reference/keywords/try-catch) around <xref:System.Net.Http.HttpClient> requests.
 
 ### Support server-rendered pages
 
@@ -287,7 +267,7 @@ By default, this manifest lists:
 * Any Blazor-managed resources, such as .NET assemblies and the .NET WebAssembly runtime files required to function offline.
 * All resources for publishing to the app's `wwwroot` directory, such as images, stylesheets, and JavaScript files, including static web assets supplied by external projects and NuGet packages.
 
-You can control which of these resources are fetched and cached by the service worker by editing the logic in `onInstall` in `service-worker.published.js`. By default, the service worker fetches and caches files matching typical web filename extensions such as `.html`, `.css`, `.js`, and `.wasm`, plus file types specific to Blazor WebAssembly (`.dll`, `.pdb`).
+You can control which of these resources are fetched and cached by the service worker by editing the logic in `onInstall` in `service-worker.published.js`. By default, the service worker fetches and caches files matching typical web file name extensions such as `.html`, `.css`, `.js`, and `.wasm`, plus file types specific to Blazor WebAssembly, such as `.pdb` files (all versions) and `.dll` files (ASP.NET Core 7.0 or earlier).
 
 To include additional resources that aren't present in the app's `wwwroot` directory, define extra MSBuild `ItemGroup` entries, as shown in the following example:
 
@@ -333,21 +313,21 @@ When building an offline-capable app, it's not enough to test the app in the Dev
 
 Updates don't complete until the user has navigated away from the app in all tabs. As explained in the [Background updates](#background-updates) section, after you deploy an update to the app, the browser fetches the updated service worker files to begin the update process.
 
-What surprises many developers is that, even when this update completes, it does **not** take effect until the user has navigated away in all tabs. It is **not** sufficient to refresh the tab displaying the app, even if it's the only tab displaying the app. Until your app is completely closed, the new service worker remains in the *waiting to activate* status. **This is not specific to Blazor, but rather is a standard web platform behavior.**
+What surprises many developers is that, even when this update completes, it doesn't take effect until the user has navigated away in all tabs. It isn't sufficient to refresh the tab displaying the app, even if it's the only tab displaying the app. Until your app is completely closed, the new service worker remains in the *waiting to activate* status. This isn't specific to Blazor, but rather is a standard web platform behavior.
 
 This commonly troubles developers who are trying to test updates to their service worker or offline cached resources. If you check in the browser's developer tools, you may see something like the following:
 
-![Google Chrome 'Application' tab shows that the Service Worker of the app is 'waiting to activate'.](progressive-web-app/_static/image7.png)
+![Google Chrome 'Application' tab shows that the Service Worker of the app is 'waiting to activate'.](~/blazor/progressive-web-app/_static/image7.png)
 
 For as long as the list of "clients," which are tabs or windows displaying your app, is nonempty, the worker continues waiting. The reason service workers do this is to guarantee consistency. Consistency means that all resources are fetched from the same atomic cache.
 
-When testing changes, you may find it convenient to click the "skipWaiting" link as shown in the preceding screenshot, then reload the page. You can automate this for all users by coding your service worker to [skip the "waiting" phase and immediately activate on update](https://developers.google.com/web/fundamentals/primers/service-workers/lifecycle#skip_the_waiting_phase). If you skip the waiting phase, you're giving up the guarantee that resources are always fetched consistently from the same cache instance.
+When testing changes, you may find it convenient to select the "skipWaiting" link as shown in the preceding screenshot, then reload the page. You can automate this for all users by coding your service worker to [skip the "waiting" phase and immediately activate on update](https://web.dev/service-worker-lifecycle/#skip-waiting). If you skip the waiting phase, you're giving up the guarantee that resources are always fetched consistently from the same cache instance.
 
 ### Users may run any historical version of the app
 
 Web developers habitually expect that users only run the latest deployed version of their web app, since that's normal within the traditional web distribution model. However, an offline-first PWA is more akin to a native mobile app, where users aren't necessarily running the latest version.
 
-As explained in the [Background updates](#background-updates) section, after you deploy an update to your app, **each existing user continues to use a previous version for at least one further visit** because the update occurs in the background and isn't activated until the user thereafter navigates away. Plus, the previous version being used isn't necessarily the previous one you deployed. The previous version can be *any* historical version, depending on when the user last completed an update.
+As explained in the [Background updates](#background-updates) section, after you deploy an update to your app, each existing user continues to use a previous version for at least one further visit because the update occurs in the background and isn't activated until the user thereafter navigates away. Plus, the previous version being used isn't necessarily the previous one you deployed. The previous version can be *any* historical version, depending on when the user last completed an update.
 
 This can be an issue if the frontend and backend parts of your app require agreement about the schema for API requests. You must not deploy backward-incompatible API schema changes until you can be sure that all users have upgraded. Alternatively, block users from using incompatible older versions of the app. This scenario requirement is the same as for native mobile apps. If you deploy a breaking change in server APIs, the client app is broken for users who haven't yet updated.
 
@@ -391,4 +371,4 @@ The [`CarChecker`](https://github.com/SteveSandersonMS/CarChecker) sample app de
 ## Additional resources
 
 * [Troubleshoot integrity PowerShell script](xref:blazor/host-and-deploy/webassembly#troubleshoot-integrity-powershell-script)
-* [SignalR cross-origin negotiation for authentication](xref:blazor/fundamentals/signalr#signalr-cross-origin-negotiation-for-authentication)
+* [Client-side SignalR cross-origin negotiation for authentication](xref:blazor/fundamentals/signalr#client-side-signalr-cross-origin-negotiation-for-authentication)

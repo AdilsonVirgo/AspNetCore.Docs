@@ -1,6 +1,3 @@
----
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
----
 * Trust the HTTPS development certificate by running the following command:
 
   ```dotnetcli
@@ -9,7 +6,7 @@ no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Bla
   
   The preceding command doesn't work on Linux. See your Linux distribution's documentation for trusting a certificate.
 
-  The preceding command displays the following dialog:
+  The preceding command displays the following dialog, provided the certificate was not previously trusted:
 
   ![Security warning dialog](~/getting-started/_static/cert.png)
 

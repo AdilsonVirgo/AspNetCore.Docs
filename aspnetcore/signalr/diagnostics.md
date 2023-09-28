@@ -4,9 +4,8 @@ author: bradygaster
 description: Learn how to gather diagnostics from your ASP.NET Core SignalR app.
 monikerRange: '>= aspnetcore-2.1'
 ms.author: bradyg
-ms.custom: "devx-track-csharp, signalr, devx-track-js"
+ms.custom: "devx-track-csharp, signalr"
 ms.date: 06/12/2020
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: signalr/diagnostics
 ---
 # Logging and diagnostics in ASP.NET Core SignalR
@@ -20,14 +19,14 @@ This article provides guidance for gathering diagnostics from your ASP.NET Core 
 > [!WARNING]
 > Server-side logs may contain sensitive information from your app. **Never** post raw logs from production apps to public forums like GitHub.
 
-Since SignalR is part of ASP.NET Core, it uses the ASP.NET Core logging system. In the default configuration, SignalR logs very little information, but this can configured. See the documentation on [ASP.NET Core logging](xref:fundamentals/logging/index#configuration) for details on configuring ASP.NET Core logging.
+Since SignalR is part of ASP.NET Core, it uses the ASP.NET Core logging system. In the default configuration, SignalR logs very little information, but this can configured. See the documentation on [ASP.NET Core logging](xref:fundamentals/logging/index) for details on configuring ASP.NET Core logging.
 
 SignalR uses two logger categories:
 
 * `Microsoft.AspNetCore.SignalR`: For logs related to Hub Protocols, activating Hubs, invoking methods, and other Hub-related activities.
 * `Microsoft.AspNetCore.Http.Connections`: For logs related to transports, such as WebSockets, Long Polling, Server-Sent Events, and low-level SignalR infrastructure.
 
-To enable detailed logs from SignalR, configure both of the preceding prefixes to the `Debug` level in your *appsettings.json* file by adding the following items to the `LogLevel` sub-section in `Logging`:
+To enable detailed logs from SignalR, configure both of the preceding prefixes to the `Debug` level in your `appsettings.json` file by adding the following items to the `LogLevel` sub-section in `Logging`:
 
 [!code-json[](diagnostics/logging-config.json?highlight=7-8)]
 
@@ -91,17 +90,17 @@ Once you've configured the verbosity, the logs will be written to the Browser Co
 
 If you want to send logs to a custom logging system, you can provide a JavaScript object implementing the `ILogger` interface. The only method that needs to be implemented is `log`, which takes the level of the event and the message associated with the event. For example:
 
-::: moniker range=">= aspnetcore-3.0"
+:::moniker range=">= aspnetcore-3.0"
 
 [!code-typescript[](diagnostics/3.x/custom-logger.ts?highlight=3-7,13)]
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-3.0"
+:::moniker range="< aspnetcore-3.0"
 
 [!code-typescript[](diagnostics/2.x/custom-logger.ts?highlight=3-7,13)]
 
-::: moniker-end
+:::moniker-end
 
 ## .NET client logging
 
@@ -171,7 +170,7 @@ Replace `[interface]` with the network interface you wish to capture on. Usually
 
 This method only works for browser-based apps.
 
-Most browser Developer Tools have a "Network" tab that allows you to capture network activity between the browser and the server. However, these traces don't include WebSocket and Server-Sent Event messages. If you are using those transports, using a tool like Fiddler or TcpDump (described below) is a better approach.
+Most browser developer tools consoles have a "Network" tab that allows you to capture network activity between the browser and the server. However, these traces don't include WebSocket and Server-Sent Event messages. If you are using those transports, using a tool like Fiddler or TcpDump (described below) is a better approach.
 
 ### Microsoft Edge and Internet Explorer
 

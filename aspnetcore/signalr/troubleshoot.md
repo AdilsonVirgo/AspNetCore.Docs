@@ -6,12 +6,11 @@ monikerRange: '>= aspnetcore-2.1'
 ms.author: bradyg
 ms.custom: mvc
 ms.date: 04/08/2020
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: signalr/troubleshoot
 ---
 # Troubleshoot connection errors
 
-This section provides help with errors that can occur when trying to establish a connection to a ASP.NET Core SignalR hub.
+This section provides help with errors that can occur when trying to establish a connection to an ASP.NET Core SignalR hub.
 
 ### Response code 404
 
@@ -37,7 +36,7 @@ WebSocket connection to 'wss://xxx/HubName' failed: Error during WebSocket hands
 Error: Failed to start the connection: Error: There was an error with the transport.
 ```
 
-This error is usually caused by a client using only the WebSockets transport but the WebSockets protocol is not enabled on the server.
+This error is usually caused by a client using only the WebSockets transport but the WebSocket protocol isn't enabled on the server.
 
 ### Response code 307
 
@@ -93,3 +92,7 @@ This is often caused by having an access token that is over 4k.
 ### Transient network failures
 
 Transient network failures may close the SignalR connection. The server may interpret the closed connection as a graceful client disconnect. To get more info on why a client disconnected in those cases [gather logs from the client and server](xref:signalr/diagnostics).
+
+## Additional resources
+
+* [SignalR Hub Protocol](https://github.com/dotnet/aspnetcore/blob/main/src/SignalR/docs/specs/HubProtocol.md)

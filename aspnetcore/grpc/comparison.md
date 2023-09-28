@@ -5,7 +5,6 @@ description: Learn how gRPC compares with HTTP APIs and what it's recommend scen
 monikerRange: '>= aspnetcore-3.0'
 ms.author: jamesnk
 ms.date: 12/05/2019
-no-loc: [appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: grpc/comparison
 ---
 # Compare gRPC services with HTTP APIs
@@ -20,7 +19,7 @@ The following table offers a high-level comparison of features between gRPC and 
 
 | Feature          | gRPC                                               | HTTP APIs with JSON           |
 | ---------------- | -------------------------------------------------- | ----------------------------- |
-| Contract         | Required (*.proto*)                                | Optional (OpenAPI)            |
+| Contract         | Required (`.proto`)                                | Optional (OpenAPI)            |
 | Protocol         | HTTP/2                                             | HTTP                          |
 | Payload          | [Protobuf (small, binary)](#performance)           | JSON (large, human readable)  |
 | Prescriptiveness | [Strict specification](#strict-specification)      | Loose. Any HTTP is valid.     |
@@ -46,7 +45,7 @@ HTTP/2 is not exclusive to gRPC. Many request types, including HTTP APIs with JS
 
 All gRPC frameworks provide first-class support for code generation. A core file to gRPC development is the [`.proto` file](https://developers.google.com/protocol-buffers/docs/proto3), which defines the contract of gRPC services and messages. From this file, gRPC frameworks generate a service base class, messages, and a complete client.
 
-By sharing the *.proto* file between the server and client, messages and client code can be generated from end to end. Code generation of the client eliminates duplication of messages on the client and server, and creates a strongly-typed client for you. Not having to write a client saves significant development time in applications with many services.
+By sharing the `.proto` file between the server and client, messages and client code can be generated from end to end. Code generation of the client eliminates duplication of messages on the client and server, and creates a strongly-typed client for you. Not having to write a client saves significant development time in applications with many services.
 
 ### Strict specification
 
@@ -87,21 +86,24 @@ gRPC is well suited to the following scenarios:
 
 It's impossible to directly call a gRPC service from a browser today. gRPC heavily uses HTTP/2 features and no browser provides the level of control required over web requests to support a gRPC client. For example, browsers do not allow a caller to require that HTTP/2 be used, or provide access to underlying HTTP/2 frames.
 
-There are two common approaches to bring gRPC to browser apps:
+gRPC on ASP.NET Core offers two browser-compatible solutions:
 
-* [gRPC-Web](https://grpc.io/docs/tutorials/basic/web.html) is an additional technology from the gRPC team that provides gRPC support in the browser. gRPC-Web allows browser apps to benefit from the high-performance and low network usage of gRPC. Not all of gRPC's features are supported by gRPC-Web. Client and bi-directional streaming isn't supported, and there is limited support for server streaming.
+* **gRPC-Web** allows browser apps to call gRPC services with the gRPC-Web client and Protobuf. gRPC-Web requires the browser app to generate a gRPC client. gRPC-Web allows browser apps to benefit from the high-performance and low network usage of gRPC.
 
-  .NET Core has support for gRPC-Web. For more information, see <xref:grpc/browser>.
+  .NET has built-in support for gRPC-Web. For more information, see <xref:grpc/grpcweb>.
 
-* RESTful JSON Web APIs can be automatically created from gRPC services by annotating the *.proto* file with [HTTP metadata](https://cloud.google.com/service-infrastructure/docs/service-management/reference/rpc/google.api#google.api.HttpRule). This allows an app to support both gRPC and JSON web APIs, without duplicating effort of building separate services for both.
+* **gRPC JSON transcoding** allows browser apps to call gRPC services as if they were RESTful APIs with JSON. The browser app doesn't need to generate a gRPC client or know anything about gRPC. RESTful APIs can be automatically created from gRPC services by annotating the `.proto` file with HTTP metadata. Transcoding allows an app to support both gRPC and JSON web APIs without duplicating the effort of building separate services for both.
 
-  .NET Core has experimental support for creating JSON web APIs from gRPC services. For more information, see <xref:grpc/httpapi>.
+  .NET has built-in support for creating JSON web APIs from gRPC services. For more information, see <xref:grpc/json-transcoding>.
+
+> [!NOTE]
+> gRPC JSON transcoding requires .NET 7 or later.
 
 ### Not human readable
 
 HTTP API requests are sent as text and can be read and created by humans.
 
-gRPC messages are encoded with Protobuf by default. While Protobuf is efficient to send and receive, its binary format isn't human readable. Protobuf requires the message's interface description specified in the *.proto* file to properly deserialize. Additional tooling is required to analyze Protobuf payloads on the wire and to compose requests by hand.
+gRPC messages are encoded with Protobuf by default. While Protobuf is efficient to send and receive, its binary format isn't human readable. Protobuf requires the message's interface description specified in the `.proto` file to properly deserialize. Additional tooling is required to analyze Protobuf payloads on the wire and to compose requests by hand.
 
 Features such as [server reflection](https://github.com/grpc/grpc/blob/master/doc/server-reflection.md) and the [gRPC command line tool](https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md) exist to assist with binary Protobuf messages. Also, Protobuf messages support [conversion to and from JSON](https://developers.google.com/protocol-buffers/docs/proto3#json). The built-in JSON conversion provides an efficient way to convert Protobuf messages to and from human readable form when debugging.
 
